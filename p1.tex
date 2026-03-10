@@ -1,0 +1,574 @@
+\section{PSet 1 - 8 February 2025}
+\subsection{Problem 1 - Two qubit state creation in python cirq}
+\begin{center}
+\begin{quantikz}[slice all, remove end slices=1,slice
+titles=slice \col,slice style=blue,slice label style
+={inner sep=1pt,anchor=south west,rotate=40}]
+\lstick{$\ket{0}$} & \gate{R_y(\theta)} & \ctrl{1} & \qw & \qw \\
+\lstick{$\ket{0}$} &                    & \targ{} & \qw  & \qw
+\end{quantikz}
+\end{center}
+Find $\theta$ such that the quantum circuit creates the state 
+\begin{equation}
+    \sqrt{\frac{3}{4}}\ket{00} + \sqrt{\frac{1}{4}}\ket{11}
+\end{equation}
+$R_y(\theta)$ is given by 
+\begin{align}
+    R_y(\theta) &= e^{i \frac{\theta}{2} Y} \\
+    &= \cos\frac{\theta}{2} \mathbb{1} - i \sin \frac{\theta}{2} Y \\
+    &= \cos\frac{\theta}{2} \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} - i \sin \frac{\theta}{2} \begin{pmatrix} 0 & -i \\ i & 0\end{pmatrix}\\
+    &= \begin{pmatrix} \cos{\frac{\theta}{2}} & 0 \\ 0 &  \cos{\frac{\theta}{2}} \end{pmatrix} + \begin{pmatrix} 0 & - \sin \frac{\theta}{2} \\ \sin \frac{\theta}{2} & 0 \end{pmatrix} \\
+    &= \begin{pmatrix} \cos \frac{\theta}{2} & - \sin \frac{\theta}{2} \\ \sin \frac{\theta}{2} & \cos \frac{\theta}{2}\end{pmatrix}
+\end{align}
+Our initial state is $\ket{00}$. Applying the $R_y$ gate to the first qubit,
+\begin{equation}
+    R_y(\theta)\ket{0} = \cos \frac{\theta}{2}\ket{0} + \sin \frac{\theta}{2}\ket{1}
+\end{equation}
+At slice 1,
+\begin{equation}
+    \cos \frac{\theta}{2}\ket{00} + \sin \frac{\theta}{2}\ket{10}
+\end{equation}
+At slice 2,
+\begin{equation}
+    \cos \frac{\theta}{2}\ket{00} + \sin \frac{\theta}{2}\ket{11}
+\end{equation}
+Now we need to match coefficients
+\begin{equation}
+    \cos \frac{\theta}{2} = \frac{\sqrt{3}}{2} \text{ and } \sin \frac{\pi}{2} = \frac{1}{2}
+\end{equation}
+Therefore
+\begin{equation}
+    \frac{\theta}{2} = \frac{\pi}{6} \Rightarrow \boxed{\theta =\frac{\pi}{3}}
+\end{equation}
+
+The cirq code is then given as: 
+\begin{lstlisting}
+    def run():
+    q0, q1 = cirq.LineQubit.range(2)    # Define qubits
+    theta = np.pi/3    # CHANGE ME (numpy as imported as np)
+    
+    # Create the circuit
+    circuit = cirq.Circuit(
+        cirq.ry(theta)(q0),    # Apply Ry gate to q0 to get desired amplitudes
+        cirq.CNOT(q0, q1)      # Apply CNOT to entangle q0 and q1
+    )
+    
+    print("Circuit being used to create the desired state:\n", circuit)
+
+    simulator = cirq.Simulator()
+    result = simulator.simulate(circuit)
+    print("State vector of the created state:")
+    print(np.round(result.final_state_vector, 5))
+    return(result.final_state_vector.tolist())
+
+\end{lstlisting}
+
+\newpage
+\subsection{Problem 2 - Density matrices and unravelings}
+Consider the bipartite state 
+\begin{equation}
+    \ket{\psi_{AB}} = \sqrt{\frac{3}{4}}\ket{00} + \sqrt{\frac{1}{4}}\ket{11}
+\end{equation}
+Suppose Bob measures in the computational basis. \\
+If Bob measures $\ket{0}$, 
+\begin{align}
+    (\mathbb{1} \otimes \ketbra{0}{0}) \ket{\psi_{AB}} = \sqrt{\frac{3}{4}}\ket{00}
+\end{align}
+Therefore, after normalizing, Alice's state when Bob measures $k = 0$ is given by
+\begin{equation}
+    \ket{\psi'_{A,0}} = \ket{0}
+\end{equation}
+The probability of Bob getting $\ket{0}$ is 
+\begin{equation}
+    p(k=0) = \norm{\sqrt{\frac{3}{4}}\ket{00}}^2 = \frac{3}{4}
+\end{equation}
+If Bob measures $\ket{1}$, 
+\begin{align}
+    (\mathbb{1} \otimes \ketbra{1}{1}) \ket{\psi_{AB}} = \sqrt{\frac{1}{4}}\ket{11}
+\end{align}
+Therefore, after normalizing, Alice's state when Bob measures $k = 1$ is given by
+\begin{equation}
+    \ket{\psi'_{A,1}} = \ket{1}
+\end{equation}
+The probability of Bob getting $\ket{1}$ is 
+\begin{equation}
+    p(k=0) = \norm{\sqrt{\frac{1}{4}}\ket{11}}^2 = \frac{1}{4}
+\end{equation}
+
+
+
+\newpage
+\subsection{Problem 3 - Density matrices and unravelings II}
+Consider the bipartite state 
+\begin{equation}
+    \ket{\psi_{AB}} = \sqrt{\frac{3}{4}}\ket{00} + \sqrt{\frac{1}{4}}\ket{11}
+\end{equation}
+Suppose Bob measures in a different basis, say by first applying a Hadamard gate then measuring in the computational basis. \\
+If we apply the Hadamard to Bob's qubit,
+\begin{align}
+    (\mathbb{1} \otimes H)\ket{\psi_{AB}} &= \frac{1}{\sqrt{2}} \left[\sqrt{\frac{3}{4}}\ket{0}_A \otimes (\ket{0}_B + \ket{1}_B) + \sqrt{\frac{1}{4}}\ket{1}_A \otimes (\ket{0}_B - \ket{1}_B)\right] \\ 
+    &= \frac{\sqrt{3}}{2} \ket{00} + \frac{\sqrt{3}}{2} \ket{01} + \frac{1}{2} \ket{10} - \frac{1}{2} \ket{11} 
+\end{align}
+After normalizing,
+\begin{equation}
+(\mathbb{1} \otimes H)\ket{\psi_{AB}} = \frac{\sqrt{3}}{4} \ket{00} + \frac{\sqrt{3}}{4} \ket{01} + \frac{1}{4} \ket{10} - \frac{1}{4} \ket{11} 
+\end{equation}
+If Bob measures $\ket{0}$, 
+\begin{align}
+    (\mathbb{1} \otimes \ketbra{0}{0}) \ket{\psi_{AB}} = \frac{\sqrt{3}}{4} \ket{00} +  \frac{1}{4} \ket{10}
+\end{align}
+Therefore, after normalizing, Alice's state when Bob measures $k = 0$ is given by 
+\begin{equation}
+    \ket{\psi''_{A,0}} = \frac{\sqrt{3}}{2} \ket{0} + \frac{1}{2} \ket{1}
+\end{equation}
+The probability of Bob measuring $k = 0$ is given by 
+\begin{equation}
+    p(k=0) = \norm{\frac{\sqrt{3}}{4}}^2 + \norm{\frac{\sqrt{1}}{4}}^2 = \frac{1}{2}
+\end{equation}
+If Bob measures $\ket{1}$, 
+\begin{align}
+    (\mathbb{1} \otimes \ketbra{0}{0}) \ket{\psi_{AB}} = \frac{\sqrt{3}}{2} \ket{01} -  \frac{1}{2} \ket{11}
+\end{align}
+Therefore, after normalizing, Alice's state when Bob measures $k = 0$ is given by 
+\begin{equation}
+    \ket{\psi''_{A,0}} = \frac{\sqrt{3}}{2} \ket{0} - \frac{1}{2} \ket{1}
+\end{equation}
+The probability of Bob measuring $k = 1$ is given by 
+\begin{equation}
+    p(k=0) = \norm{\frac{\sqrt{3}}{4}}^2 + \norm{\frac{\sqrt{1}}{4}}^2 = \frac{1}{2}
+\end{equation}
+
+
+
+\newpage
+\subsection{Problem 4 - Density matrices and unravelings III}
+For an ensemble of states $\ket{\psi_k}$ which occur with $p_k$ the density matrix is
+\begin{equation}
+    \rho = \sum p_k \ketbra{\psi_k}
+\end{equation}
+Consider the bipartite state
+\begin{equation}
+    \ket{\psi_{AB}} = \sqrt{\frac{3}{4}}\ket{00} + \sqrt{\frac{1}{4}}\ket{11}
+\end{equation}
+From Problem 2, we have that 
+\begin{align*}
+    \text{If Bob measures } k=0 \text{, Alice's state is } \ket{\psi'_{A,0}} = \ket{0} \text{. Bob measures } k=0 \text{ with probability } p(k=0) = \frac{3}{4} \\ 
+    \text{If Bob measures } k=1 \text{, Alice's state is } \ket{\psi'_{A,1}} = \ket{1} \text{. Bob measures } k=1 \text{ with probability } p(k=1) = \frac{1}{4}
+\end{align*}
+We want to find the density matrix $\rho'$ for Alice's state $\ket{\psi'_{A,k}}$.
+\begin{align}
+    \rho' &= \sum p_k \ketbra{\psi'_{A,k}} \\ 
+    &= p_{k=0}\ketbra{\psi'_{A,0}} + p_{k=1}\ketbra{\psi'_{A,1}} \\
+    &= \frac{3}{4}\ketbra{0} + \frac{1}{4}\ketbra{1} \\
+    &= \frac{3}{4}\begin{pmatrix}1 \\ 0\end{pmatrix}\begin{pmatrix}1 & 0\end{pmatrix} + \frac{1}{4}\begin{pmatrix}0 \\ 1\end{pmatrix}\begin{pmatrix}0 & 1\end{pmatrix} \\
+    &= \frac{3}{4}\begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} + \frac{1}{4} \begin{pmatrix}0 & 0 \\ 0 & 1\end{pmatrix} \\
+    \rho' &= \begin{pmatrix}\frac{3}{4} & 0 \\ 0 & \frac{1}{4}\end{pmatrix}
+\end{align}
+From problem 3, we have that 
+\begin{align*}
+    \text{If Bob measures } k=0 \text{, Alice's state is } \ket{\psi''_{A,0}} = \frac{\sqrt{3}}{2} \ket{0} + \frac{1}{2} \ket{1} \text{. Bob measures } k=0 \text{ with probability } p(k=0) = \frac{1}{2} \\ 
+    \text{If Bob measures } k=1 \text{, Alice's state is } \ket{\psi''_{A,1}} = \frac{\sqrt{3}}{2} \ket{0} - \frac{1}{2} \ket{1} \text{. Bob measures } k=1 \text{ with probability } p(k=0) = \frac{1}{2}
+\end{align*}
+We want to find the density matrix $\rho''$ for Alice's state $\ket{\psi''_{A,k}}$. \\
+Calculating $\ketbra{\psi''_{A,0}}$
+\begin{align}
+    \ketbra{\psi''_{A,0}} &= \left(\frac{\sqrt{3}}{2} \ket{0} + \frac{1}{2} \ket{1}\right)\left(\frac{\sqrt{3}}{2} \bra{0} + \frac{1}{2} \bra{1}\right) \\
+    &= \frac{3}{4}\ketbra{0} + \frac{\sqrt{3}}{4}\ketbra{0}{1} + \frac{\sqrt{3}}{4}\ketbra{1}{0} + \frac{1}{4} \ketbra{1}{1} \\
+    &= \frac{3}{4}\begin{pmatrix}1 \\ 0\end{pmatrix}\begin{pmatrix}1 & 0\end{pmatrix} + \frac{\sqrt{3}}{4}\begin{pmatrix}1 \\ 0\end{pmatrix}\begin{pmatrix}0 & 1\end{pmatrix} +  \frac{\sqrt{3}}{4}\begin{pmatrix}0 \\ 1\end{pmatrix}\begin{pmatrix}1 & 0\end{pmatrix}  + \frac{1}{4}\begin{pmatrix}0 \\ 1\end{pmatrix}\begin{pmatrix}0 & 1\end{pmatrix} \\
+    &= \frac{3}{4}\begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} + \frac{\sqrt{3}}{4}\begin{pmatrix} 0 & 1 \\ 0 & 0\end{pmatrix} + \frac{\sqrt{3}}{4}\begin{pmatrix}0 & 0 \\ 1 & 0\end{pmatrix} + \frac{1}{4} \begin{pmatrix}0 & 0 \\ 0 & 1\end{pmatrix} \\
+    \ketbra{\psi''_{A,0}} &= \begin{pmatrix}\frac{3}{4} & \frac{\sqrt{3}}{4} \\ \frac{\sqrt{3}}{4} & \frac{1}{4}\end{pmatrix}
+\end{align}
+Calculating $\ketbra{\psi''_{A,0}}$, 
+\begin{align}
+    \ketbra{\psi''_{A,0}} &= \left(\frac{\sqrt{3}}{2} \ket{0} - \frac{1}{2} \ket{1}\right)\left(\frac{\sqrt{3}}{2} \bra{0} - \frac{1}{2} \bra{1}\right) \\
+    &= \frac{3}{4}\ketbra{0} - \frac{\sqrt{3}}{4}\ketbra{0}{1} - \frac{\sqrt{3}}{4}\ketbra{1}{0} + \frac{1}{4} \ketbra{1}{1} \\
+    &= \frac{3}{4}\begin{pmatrix}1 \\ 0\end{pmatrix}\begin{pmatrix}1 & 0\end{pmatrix} - \frac{\sqrt{3}}{4}\begin{pmatrix}1 \\ 0\end{pmatrix}\begin{pmatrix}0 & 1\end{pmatrix} -  \frac{\sqrt{3}}{4}\begin{pmatrix}0 \\ 1\end{pmatrix}\begin{pmatrix}1 & 0\end{pmatrix}  + \frac{1}{4}\begin{pmatrix}0 \\ 1\end{pmatrix}\begin{pmatrix}0 & 1\end{pmatrix} \\
+    &= \frac{3}{4}\begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} - \frac{\sqrt{3}}{4}\begin{pmatrix} 0 & 1 \\ 0 & 0\end{pmatrix} - \frac{\sqrt{3}}{4}\begin{pmatrix}0 & 0 \\ 1 & 0\end{pmatrix} + \frac{1}{4} \begin{pmatrix}0 & 0 \\ 0 & 1\end{pmatrix} \\
+    \ketbra{\psi''_{A,0}} &= \begin{pmatrix}\frac{3}{4} & -\frac{\sqrt{3}}{4} \\ -\frac{\sqrt{3}}{4} & \frac{1}{4}\end{pmatrix}
+\end{align}
+Calculating $\rho''$,
+\begin{align}
+    \rho' &= \sum p_k \ketbra{\psi''_{A,k}} \\ 
+    &= p_{k=0}\ketbra{\psi''_{A,0}} + p_{k=1}\ketbra{\psi''_{A,1}} \\
+    &= \frac{1}{2}\begin{pmatrix}\frac{3}{4} & \frac{\sqrt{3}}{4} \\ \frac{\sqrt{3}}{4} & \frac{1}{4}\end{pmatrix} + \frac{1}{2}\begin{pmatrix}\frac{3}{4} & -\frac{\sqrt{3}}{4} \\ -\frac{\sqrt{3}}{4} & \frac{1}{4}\end{pmatrix} \\
+    \rho'' &= \begin{pmatrix}\frac{3}{4} & 0 \\ 0 & \frac{1}{4}\end{pmatrix}
+\end{align} 
+
+
+
+\newpage
+\subsection{Problem 5 - Partial trace and reduced density matrices}
+Given $\ket{\psi}_{AB} = (\ket{00} + \ket{01})/\sqrt{2}$, we want to find $\rho_A$
+\begin{align}
+    \rho_A &= \Tr_b\left[\left(\frac{1}{\sqrt{2}}(\ket{00} + \ket{01})\right)\left(\frac{1}{\sqrt{2}}(\bra{00} + \bra{01})\right)\right] \\
+    &= \Tr_b\left[\frac{1}{2}(\ketbra{00} + \ketbra{00}{01} + \ketbra{01}{00} + \ketbra{01}{01})\right] \\
+    &= \frac{1}{2}\ketbra{0} + \frac{1}{2}\ketbra{0} \\ 
+    &= \ketbra{0} \\ 
+    \rho_A &= \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}
+\end{align}
+
+Given $\ket{\psi}_{AB} = (\ket{00} + \ket{01} + \ket{11})/\sqrt{3}$, we want to find $\rho_A$,
+\begin{align}
+    \rho_A &= \Tr_b\left[\left(\frac{1}{\sqrt{3}}(\ket{00} + \ket{01} + \ket{11})\right)\left(\frac{1}{\sqrt{2}}(\bra{00} + \bra{01} + \bra{11})\right)\right] \\
+    &= \Tr_b\left[\frac{1}{3}(\ketbra{00}{00} + \ketbra{00}{01} + \ketbra{00}{11} + \ketbra{01}{00} + \ketbra{01}{01} + \ketbra{01}{11} + \ketbra{11}{00} + \ketbra{11}{01} + \ketbra{11}{11})\right] \\
+    &= \frac{1}{3}\ketbra{0}{0} + \frac{1}{3}\ketbra{0}{0} + \frac{1}{3}\ketbra{0}{1} + \frac{1}{3}\ketbra{1}{0} +  \frac{1}{3}\ketbra{1}{1} \\
+    &= \begin{pmatrix}\frac{2}{3} & \frac{1}{3} \\ \frac{1}{3} & \frac{1}{3}\end{pmatrix}
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 6 - Partial trace and reduced density matrices II}
+Given 
+\begin{equation}
+    \rho_{AB} = \frac{1}{10}\begin{pmatrix}1 & 0 & 0 & 0 \\ 0 & 2 & 0 & 0 \\ 0 & 0 & 3 & 0 \\ 0 & 0 & 0 & 4 \end{pmatrix} \label{rho_ab1}
+\end{equation}
+We know that 
+\begin{align}
+    \rho_A &= \Tr_b \rho_{AB} \\
+    &= \sum_{jj'kk'}c_{jj'kk'} \ketbra{j}{j'} \otimes \braket{k'|k} \\
+    \rho_A &= \sum_{jj'}\left(\sum_k c_{jj'kk} \ketbra{j}{j'} \right)
+\end{align}
+Equivalently, we can write \label{rho_ab1} as
+\begin{equation}
+    \rho_A = \frac{1}{10} \ketbra{00} + \frac{2}{10}\ketbra{01} + \frac{3}{10}\ketbra{10} + \frac{4}{10}\ketbra{11}
+\end{equation}
+Therefore,
+\begin{align}
+    \rho_A &= \Tr_b \rho_{AB} \\
+    &= \frac{1}{10}\ketbra{0} + \frac{2}{10}\ketbra{0} + \frac{3}{10}\ketbra{1} + \frac{4}{10} \\
+    &= \frac{3}{10}\ketbra{0} + \frac{7}{10}\ketbra{1}  \\ 
+    &= \frac{3}{10} \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} + \frac{7}{10} \begin{pmatrix}0 & 0 \\ 0 & 1\end{pmatrix} \\ 
+    \rho_A &= \begin{pmatrix}\frac{3}{10} & 0 \\ 0 & \frac{7}{10}\end{pmatrix}
+\end{align}
+Similarly, given 
+\begin{equation}
+    \rho_{AB} = \begin{pmatrix}a & b & c & d \\ e & f & g & h \\ j & k & m & n \\ o & p & q & r \end{pmatrix}
+\end{equation}
+Using the orthonormal basis $\ket{00}, \ket{01}, \ket{10}, \ket{11}$ we can label $\rho_{AB}$,
+\begin{equation}
+    \bordermatrix{ & \ket{00} & \ket{01} & \ket{10} & \ket{11}\cr
+      \bra{00} & a & b & c & d \cr
+      \bra{01} & e & f & g & h \cr
+      \bra{10} & j & k & m & n \cr
+      \bra{11} & o & p & q & r }
+\end{equation}
+Rewriting $\rho_{AB}$,
+\begin{align}
+    \rho_{AB} &= a \ketbra{00}{00} + b \ketbra{01}{00} + c \ketbra{10}{00} + d \ketbra{11}{00}  \notag \\
+    &\qquad + e \ketbra{00}{01} + f \ketbra{01}{01} + g \ketbra{10}{01} + h \ketbra{11}{01} \notag \\
+    &\qquad + j \ketbra{00}{10} + k \ketbra{01}{10} + m \ketbra{10}{10} + n \ketbra{11}{10} \notag \\
+    &\qquad + o \ketbra{00}{11} + p \ketbra{01}{11} + q \ketbra{10}{11} + r \ketbra{11}{11} 
+\end{align}
+Therefore,
+\begin{align}
+    \rho_A &= \Tr_b \rho_{AB} \\
+    &= a\ketbra{0}{0} + c \ketbra{1}{0} + f\ketbra{0}{0} + h\ketbra{1}{0} + f\ketbra{0}{0} + h\ketbra{1}{0}\\
+    & \qquad + j\ketbra{0}{1} + m \ketbra{1}{1} + p \ketbra{0}{1} + r \ketbra{1}{1} \\
+    &= (a + f)\ketbra{0}{0} + (c + h)\ketbra{1}{0} + (j+p)\ketbra{0}{1} + (m+r)\ketbra{1}{1} \\
+    \rho_A &= \begin{pmatrix}a + f & c + h \\ j + p & m + r\end{pmatrix}
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 7 - Purifications of density matrices}
+A purification of the state $\rho_Q$ of the system $Q$ is a pure state $\psi_{RQ}$ of a larger, join system $RQ$, such that the partial trace $\psi_{RQ}$ over $R$ gives $\rho_Q$ i.e. 
+\begin{equation}
+    \Tr_r\ketbra{\psi_{RQ}}{\psi_{RQ}} = \rho_Q
+\end{equation}
+Given
+\begin{equation}
+    \rho_Q = \frac{1}{10}\begin{pmatrix}3 & 0 \\ 0 & 7 \end{pmatrix}
+\end{equation}
+Then, 
+\begin{align}
+    \ket{\psi_{RQ}} = \sqrt{\frac{3}{10}}\ket{00} + \sqrt{\frac{7}{10}}\ket{11} 
+\end{align}
+Given, 
+\begin{equation}
+    \rho_Q = \frac{1}{6}\begin{pmatrix}1 & 1 \\ 1 & 5 \end{pmatrix} \label{rho_q}
+\end{equation}
+To computer $L$ in the Cholesky purification method, we want a factorization,
+\begin{equation}
+    \rho_Q = L L^\dagger
+\end{equation}
+with $L$ lower triangular and real nonnegative diagonal if $\rho$ is real, symmetric / Hermitian positive definite. \\
+Then,
+\begin{equation}
+    LL^\dagger = \begin{pmatrix}\abs{l_{11}}^2 & l_{11}l^*_{21} \\ l_{21}l^*_{11} & \abs{l_{21}}^2 + \abs{l_{22}}^2\end{pmatrix} = \begin{pmatrix}a & b \\ b^* & d \end{pmatrix}
+\end{equation}
+Matching entries,
+\begin{align}
+    \abs{l_{11}}^2 = a & \Rightarrow l_{11} = \sqrt{a} \\
+    l_{11}l^*_{21} = b & \Rightarrow l_{21} = \frac{b}{\sqrt{a}} \\
+    \abs{l_{21}}^2 + \abs{l_{22}}^2 = d & \Rightarrow ll_{22} = \sqrt{d - \frac{\abs{b}^2}{a}}
+\end{align}
+Applying it to \eqref{rho_q}, 
+\begin{align}
+    l_{11} &= \sqrt{\frac{1}{6}} \\
+    l_{21} &= \frac{1/6}{1/\sqrt{6}} = \frac{\sqrt{6}}{6} = \sqrt{\frac{1}{6}} \\
+    l_{22} &= \sqrt{\frac{5}{6} = \frac{(1/6)^2}{1/6}} = \sqrt{\frac{5}{6} - \frac{1}{6}} = \sqrt{\frac{4}{6}} = \sqrt{\frac{2}{3}}
+\end{align}
+Therefore, 
+\begin{align}
+    \ket{\psi_{RQ}} = \sqrt{\frac{1}{6}}\ket{00} + \sqrt{\frac{1}{6}}\ket{10} + \sqrt{\frac{2}{3}} \ket{11}
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 8 - Operator Sum Representation - Reset error}
+The interaction of any quantum system with an environment can be mathematically expressed by a quantum operation, $\mathcal{E}(\rho)$, defined as 
+\begin{equation}
+    \mathcal{E}(\rho) = \sum_k E_k \rho E_k^\dagger
+\end{equation}
+where the only condition on the operation elements $E_k$ is that $\sum_k E_k^\dagger E_k = I$. This is known as the operator sum representation. \\
+We are given a black box which takes single qubit states $\rho_{in}$ as input, and produces single qubit states $\rho_{out}$ as output. Suppose the box just replaces its input with $\ket{0}$, such that $\rho_{out}$ is $\rho_{out} = \ketbra{0}$. We want to give a set of two operation elements $\{E_0, E_1\}$ describing the black box, such that $\rho_{out} = \sum_k E_k \rho_{in}E_K^\dagger$. \\
+Suppose we have a generic input density matrix 
+\begin{equation}
+    \rho_{in} = \begin{pmatrix}a & b \\ c & d\end{pmatrix}
+\end{equation}
+We want to find two operation elements $\{E_0,E_1\}$ such that 
+\begin{equation}
+    \rho_{out} = \ketbra{0} = \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_0 = \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Then,
+\begin{equation}
+    E_0 \rho_{in} E_{0}^\dagger = \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}  = \begin{pmatrix}a & b \\ 0 & 0\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} = \begin{pmatrix}a  & 0 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_1 = \begin{pmatrix}0 & 1 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Then,
+\begin{equation}
+    E_1 \rho_{in} E_1^\dagger = \begin{pmatrix}0 & 1 \\ 0 & 0\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}0 & 0 \\ 1 & 0\end{pmatrix}  = \begin{pmatrix}c & d \\ 0 & 0\end{pmatrix} \begin{pmatrix}0 & 0 \\ 1 & 0\end{pmatrix} = \begin{pmatrix}d  & 0 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Therefore, 
+\begin{equation}
+    E_0 = \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} \text{ and }
+    E_1 = \begin{pmatrix}0 & 1 \\ 0 & 0\end{pmatrix} 
+\end{equation}
+We can see that
+\begin{align}
+    \rho_{out} &= \sum_k E_k \rho_{in} E_k^\dagger \\
+    &=  E_0 \rho_{in} E_{0}^\dagger + E_1 \rho_{in} E_1^\dagger \\
+    &= \begin{pmatrix}a  & 0 \\ 0 & 0\end{pmatrix} + \begin{pmatrix}d  & 0 \\ 0 & 0\end{pmatrix} \\
+    \rho_{out }&= \begin{pmatrix}a + d & 0 \\ 0 & 0\end{pmatrix} \\
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 9 - Operator Sum Representation: Complete depolarization}
+Suppose the black box replaces any input $\rho_{in}$ with the completely randomized state $I/2$. This is known as the completely depolarizing channel in quantum information theory, but corresponds to the what is normally called as the erasure channel in classical information theory. We want to find $\{E_k\}$ describing the operations of this box.
+\begin{equation}
+    \rho_{in} = \begin{pmatrix}a & b \\ c & d\end{pmatrix}
+\end{equation}
+We want to find two operation elements $\{E_0,E_1\}$ such that 
+\begin{equation}
+    \rho_{out} = \mathbb{1}/2 = \frac{1}{2}\begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_0 = \frac{1}{2}\begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix}
+\end{equation}
+Then 
+\begin{equation}
+    \frac{1}{4}\begin{pmatrix}1 & 0\\ 0 & 1\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix}  = \frac{1}{4} \begin{pmatrix}a & b  \\ c & d\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & 1\end{pmatrix} = \frac{1}{4} \begin{pmatrix}a & b \\ c & d\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_1 = \frac{1}{2}\begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix}
+\end{equation}
+Then 
+\begin{equation}
+    \frac{1}{4}\begin{pmatrix}0 & 1\\ 1 & 0\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix}  = \frac{1}{4} \begin{pmatrix}c & d \\ a & b\end{pmatrix} \begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix} = \frac{1}{4} \begin{pmatrix}d & c \\ b & a\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_2 = \frac{1}{2}\begin{pmatrix}0 & -i \\ i & 0\end{pmatrix}
+\end{equation}
+Then 
+\begin{equation}
+    \frac{1}{4}\begin{pmatrix}0 & -i\\ i & 0\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}0 & -i \\ i & 0\end{pmatrix}  = \frac{1}{4} \begin{pmatrix}-ic & -id \\ ia & ib\end{pmatrix} \begin{pmatrix}0 & -i \\ i & 0\end{pmatrix} = \frac{1}{4} \begin{pmatrix}d & -c \\ -b & a\end{pmatrix}
+\end{equation}
+Let 
+\begin{equation}
+    E_3 = \frac{1}{2}\begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix}
+\end{equation}
+Then 
+\begin{equation}
+    \frac{1}{4}\begin{pmatrix}1 & 0\\ 0 & -1\end{pmatrix}  \begin{pmatrix}a & b \\ c & d\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix}  = \frac{1}{4} \begin{pmatrix}a & b  \\ -c & -d\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix} = \frac{1}{4} \begin{pmatrix}a & -b \\ -c & d\end{pmatrix}
+\end{equation}
+Therefore,
+\begin{align}
+    \rho_{out} &= \sum_k E_k \rho_{in}E_K^\dagger \\ 
+    &= E_1\rho_{in}E_1^\dagger + E_2\rho_{in}E_2^\dagger + E_3\rho_{in}E_3^\dagger \\ 
+    &= \frac{1}{4} \begin{pmatrix}a & b \\ c & d\end{pmatrix} + \frac{1}{4} \begin{pmatrix}d & c \\ b & a\end{pmatrix} + \frac{1}{4} \begin{pmatrix}d & -c \\ -b & a\end{pmatrix} + \frac{1}{4} \begin{pmatrix}a & -b \\ -c & d\end{pmatrix} \\
+    &= \frac{1}{2} \begin{pmatrix}a+d & 0 \\ 0 & a+d\end{pmatrix}
+\end{align}
+Quantum codes can correct for such single qubit erasure errors, which completely destroys the original qubit!
+
+
+
+\newpage
+\subsection{Problem 10 - Operator Sum Representation: Black Boxes}
+We are given a black box which takes single qubits as input and produces single qubits as outputs. From performing experiments, you determine that the black box performs 
+\begin{equation}
+    \mathcal{E}(\rho_{in}) = pI/2 + (1-p)\rho_{in}
+\end{equation}
+where $p$ is a probability. We want to find $\{E_k\}$ describing the operation of this box. 
+Let our input density matrix be
+\begin{equation}
+    \rho_{in} = \begin{pmatrix}a & b \\ c & d\end{pmatrix}
+\end{equation}
+From the previous problem, we showed that
+\begin{equation}
+    \frac{I}{2} = \frac{1}{4}(\rho + X\rho X + Y\rho Y + Z\rho Z) 
+\end{equation}
+Then,
+\begin{align}
+    \mathcal{E}(\rho_{in}) &= p\left(\frac{1}{4}(\rho_{in} + X\rho_{in} X + Y\rho_{in} Y + Z\rho_{in} Z) \right) + (1-p)\rho_{in} \\
+    &= \left(1-\frac{3p}{4}\right) \rho_{in} + \frac{p}{4}(X\rho X + Y\rho Y + Z\rho Z)
+\end{align}
+Therefore,
+\begin{align}
+    E_0 &= \begin{pmatrix}\sqrt{1 - \frac{3p}{4}} & 0 \\ 0 & \sqrt{(1 - \frac{3p}{4})}\end{pmatrix} \\
+    E_1 &= \frac{1}{2}\begin{pmatrix}0 & \frac{\sqrt{p}}{2} \\ \frac{\sqrt{p}}{2} & 0\end{pmatrix} \\
+    E_2 &= \frac{1}{2}\begin{pmatrix}0 & \frac{-i\sqrt{p}}{2} \\ \frac{i\sqrt{p}}{2} & 0\end{pmatrix} \\
+    E_0 &= \begin{pmatrix}\frac{\sqrt{p}}{2} & 0 \\ 0 & \frac{\sqrt{p}}{2}\end{pmatrix} 
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 11 - Operator Sum Representation: Black Boxes}
+Consider a black box which takes single qubits as input and produces single qubits as outputs. The schematic diagram for the quantum circuit inside the black box is given by
+\begin{center}
+\begin{quantikz}[row sep=0.6cm, column sep=0.8cm]
+\lstick{$\rho_{\text{in}}$} \qw & \ctrl{1} \qw & \qw \rstick{$\rho_{\text{out}}$} \\
+\lstick{$\ket{0}$}         \qw & \gate{R_x(\theta)} \qw & \meter{}
+\end{quantikz}
+\end{center}
+Recall:
+\begin{align}
+    R_x(\theta) &= e^{-i\frac{\theta}{2}X} = \cos\frac{\theta}{2} \mathbb{1} - i \sin\frac{\theta}{2} X \\
+    &= \begin{pmatrix}\cos\frac{\theta}{2} & 0 \\ 0 & \cos\frac{\theta}{2}\end{pmatrix}  + \begin{pmatrix} 0 & -i\sin\frac{\theta}{2} \\ -i\sin\frac{\theta}{2} & 0\end{pmatrix} \\
+    &= \begin{pmatrix} \cos\frac{\theta}{2} & -i\sin\frac{\theta}{2} \\ -i\sin\frac{\theta}{2} & \cos\frac{\theta}{2} \end{pmatrix}
+\end{align}
+Let the environment $\ket{0}$ be the first qubit and the system be the second qubit, then
+\begin{align}
+    U &= \mathbb{1} \otimes \ketbra{0} + R_x(\theta) \otimes \ketbra{1} \\
+    &= \begin{pmatrix}1 & 0 \\ 0 & 1 \end{pmatrix} \otimes \begin{pmatrix}1 & 0 \\ 0 & 0 \end{pmatrix} + \begin{pmatrix} \cos\frac{\theta}{2} & -i\sin\frac{\theta}{2} \\ -i\sin\frac{\theta}{2} & \cos\frac{\theta}{2} \end{pmatrix} \otimes \begin{pmatrix}0 & 0 \\ 0 & 1 \end{pmatrix} \\
+    &= \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 0 \end{pmatrix} + 
+    \begin{pmatrix} 0 & 0 & 0 & 0 \\ 0 & \cos\frac{\theta}{2} & 0 & -i\sin\frac{\theta}{2} \\ 0 & 0 & 0 & 0 \\ 0 & -i\sin\frac{\theta}{2} & 0 & \cos\frac{\theta}{2} \end{pmatrix} \\
+    U &= \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & g & 0 & -i\sqrt{1-g^2} \\ 0 & 0 & 1 & 0 \\ 0 & -i\sqrt{1-g^2} & 0 & g \end{pmatrix}
+\end{align}
+$E_k = \braket{k|U|0}$, therefore calculating $E_0$ and $E_1$, 
+Calculating $E_0$
+\begin{align}
+    E_0 &= \braket{0|U|0} = \begin{pmatrix}1 & 0 \\ 0 & g\end{pmatrix} \\
+    E_1 &= \braket{1|U|0} = \begin{pmatrix}0 & 0 \\ 0 & -i\sqrt{1-g^2}\end{pmatrix}
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 12 - Operator Sum Representation: Black Box II}
+Given another schematic diagram for the quantum circuit inside the black box,
+\begin{center}
+\begin{quantikz}[row sep=0.6cm, column sep=0.8cm]
+\lstick{$\rho_{\text{in}}$} \qw & \gate{Z} \qw & \qw \rstick{$\rho_{\text{out}}$} \\
+\lstick{$\rho_{env}$}         \qw & \ctrl{-1} \qw & \meter{}
+\end{quantikz}
+\end{center}
+Let the environment state be 
+\begin{equation}
+    \rho_{env} = p \ketbra{0} + (1-p)\ketbra{1}
+\end{equation}
+Recall 
+\begin{equation}
+    Z = \begin{pmatrix}1 & 0 \\ 0 & -1\end{pmatrix}
+\end{equation}
+Let the environment be the first qubit and the system be the second qubit, then
+\begin{equation}
+    U = \ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z 
+\end{equation}
+The joint input state is given by
+\begin{equation}
+    \rho_{env} \otimes \rho_{in} = (p \ketbra{0} + (1-p)\ketbra{1}) \otimes \rho_{in} = p(\ketbra{0} \otimes \rho_{in}) + (1-p)(\ketbra{1} \otimes \rho_{in})
+\end{equation}
+We are evolving a density matrix (an operator), not a state vector. Unitary gates act on kets once, but once on density matrices by conjugation:
+\begin{equation}
+    \rho_{in} \mapsto U \rho_{in} U^\dagger 
+\end{equation}
+We want to evaluate $U(\rho_{env}\otimes\rho_{in})U^\dagger$, since $U = U^\dagger$ 
+\begin{align}
+    U(\rho_{env}\otimes\rho_{in})U &= \ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z (p(\ketbra{0} \otimes \rho_{in}) + (1-p)(\ketbra{1} \otimes \rho_{in})) \ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z \\
+    &= (\ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z)(p(\ketbra{0} \otimes \rho_{in}))(\ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z) \notag \\
+    & \qquad + (\ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z)((1-p)(\ketbra{1} \otimes \rho_{in}))(\ketbra{0} \otimes \mathbb{1} + \ketbra{1} \otimes Z) \\
+    &= (\ketbra{0} \otimes \mathbb{1})(p\ketbra{0}\otimes\rho_{in})(\ketbra{0} \otimes \mathbb{1}) + (\ketbra{1}\otimes Z)((1-p)(\ketbra{1} \otimes \rho_{in}))(\ketbra{1}\otimes Z)\\
+    &=p(\ketbra{0} \otimes \rho_{in}) + (1-p)( \ketbra{1} \otimes Z\rho_{in}Z)
+\end{align}
+
+Taking the trace over the environment,
+\begin{align}
+    \rho_{out} &= \Tr_{env}[U(\rho_{env} \otimes \rho_{in})U] \\
+    &= p \rho_{in} + (1-p)Z\rho_{in}Z\rho_{in}Z
+\end{align}
+From this were can see that 
+\begin{align}
+    E_0 &= \begin{pmatrix}\sqrt{p} & 0 \\ 0 & \sqrt{p} \end{pmatrix}\\ 
+    E_1 &= \begin{pmatrix}\sqrt{1-p} & 0 \\ 0 & -\sqrt{1-p} \end{pmatrix}
+\end{align}
+
+
+
+\newpage
+\subsection{Problem 13 - Operator Sum Representation: Black Box Comparison}
+Recall that two quantum operations $\mathcal{E}$ and $\mathcal{F}$ are equivalent if they are related by a unitary transform, i.e. that
+\begin{equation}
+    F_K = \sum_j U_{kj}E_j
+\end{equation}
+for some unitary $U$. We want find an expression for $g$ in therms of $p$ such that the two quantum operations depicted above are equivalent. \\
+From Problem 11, we have
+\begin{align}
+    E_0 &= \begin{pmatrix}1 & 0 \\ 0 & g\end{pmatrix} \\
+    E_1 &= \begin{pmatrix}0 & 0 \\ 0 & -i\sqrt{1-g^2}\end{pmatrix}
+\end{align}
+From Problem 12, we have
+\begin{align}
+    E_0 &= \begin{pmatrix}\sqrt{p} & 0 \\ 0 & \sqrt{p} \end{pmatrix}\\ 
+    E_1 &= \begin{pmatrix}\sqrt{1-p} & 0 \\ 0 & -\sqrt{1-p} \end{pmatrix}
+\end{align}
+The interaction of of any quantum system with an environment can be mathematically expressed by a quantum operations $\mathcal{E}(\rho)$ defined as 
+\begin{equation}
+    \mathcal{E}(\rho) = \sum_k E_k \rho E_k^\dagger
+\end{equation}
+For problem 11, 
+\begin{align}
+    \mathcal{E}(\rho) &= \begin{pmatrix}1 & 0 \\ 0 & g\end{pmatrix} \begin{pmatrix}a & b \\ c & d \end{pmatrix}\begin{pmatrix}1 & 0 \\ 0 & g\end{pmatrix} + \begin{pmatrix}0 & 0 \\ 0 & -i\sqrt{1-g^2}\end{pmatrix} \begin{pmatrix}a & b \\ c & d \end{pmatrix}\begin{pmatrix}0 & 0 \\ 0 & i\sqrt{1-g^2}\end{pmatrix} \\ 
+    &= \begin{pmatrix}a & b \\ cg & d \end{pmatrix}\begin{pmatrix}1 & 0 \\ 0 & g\end{pmatrix} +  \begin{pmatrix}0 & 0 \\ -ic\sqrt{1-g^2} & -ic\sqrt{1-g^2}\end{pmatrix}\begin{pmatrix}0 & 0 \\ 0 & i\sqrt{1-g^2}\end{pmatrix}\\
+    &= \begin{pmatrix}a & bg \\ cg & dg^2 \end{pmatrix} + \begin{pmatrix}0 & 0 \\ 0 & d(1-g^2) \end{pmatrix} \\
+    \mathcal{E}(\rho) &= \begin{pmatrix}a & bg \\ cg & d \end{pmatrix}
+\end{align}
+For problem 12,
+\begin{align}
+    \mathcal{E}(\rho) &= \begin{pmatrix}\sqrt{p} & 0 \\ 0 & \sqrt{p} \end{pmatrix} \begin{pmatrix}a & b \\ c & d \end{pmatrix} \begin{pmatrix}\sqrt{p} & 0 \\ 0 & \sqrt{p} \end{pmatrix} + \begin{pmatrix}\sqrt{1-p} & 0 \\ 0 & -\sqrt{1-p} \end{pmatrix} \begin{pmatrix}a & b \\ c & d \end{pmatrix} \begin{pmatrix}\sqrt{1-p} & 0 \\ 0 & -\sqrt{1-p} \end{pmatrix} \\
+    &= \begin{pmatrix}a\sqrt{p} & b\sqrt{p} \\ c\sqrt{p} & d\sqrt{p} \end{pmatrix}\begin{pmatrix}\sqrt{p} & 0 \\ 0 & \sqrt{p} \end{pmatrix} + \begin{pmatrix}a\sqrt{1-p} & b\sqrt{1-p} \\ -c\sqrt{1-p} & -d\sqrt{1-p} \end{pmatrix} \begin{pmatrix}\sqrt{1-p} & 0 \\ 0 & -\sqrt{1-p} \end{pmatrix}\\
+    &= \begin{pmatrix}ap & bp \\ cp & dp \end{pmatrix} + \begin{pmatrix}a(1-p) & -b(1-p) \\ c(1-p) & d(1-p) \end{pmatrix} \\
+    &= \begin{pmatrix}a & b(2p-1) \\ c(2p-1) & dp \end{pmatrix}
+\end{align}
+Therefore,
+\begin{equation}
+    g = 2p - 1
+\end{equation}
+
+
+

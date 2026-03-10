@@ -1,0 +1,121 @@
+\section{Lecture 6: Quantum Signal Processing}
+Lecture overview:
+\begin{enumerate}[label=(\Roman*)]
+    \item Conceptual Overview
+    \item Quantum signal processing
+    \item Eigenvalue transformation
+    \item Quantum Singular Value Transformation
+\end{enumerate}
+
+\subsection{Conceptual overview}
+Quantum signal processing and the quantum singular value transform algorithm capture the essence behind, and fully reproduce (and in some cases improve upon) Grover's quantum search algorithm, the HHL quantum linear systems algorithm, Hamiltonian simulation, quantum phase estimation, and many other algorithms. This works based on two ingredients
+\begin{itemize}
+    \item block-encoded operator
+    \item polynomial transform of its singular values
+\end{itemize}
+
+A general unitary transform on $n$ qubits is described by a $2^n \times 2^n$ matrix. The idea of \textit{block encoding} is to use just a sub-block $A$,  of this matrix, which we may take wlog to be the top left block:
+\begin{equation}
+    \begin{pmatrix}
+        A & \ldots \\
+        \vdots & \ddots
+    \end{pmatrix}
+\end{equation}
+where the $\norm{A} < 1$ for $U$ to be unitary. In particular the norm of $A$ must be sufficiently small. The dimension of $A$ just needs to be smaller than that of $U$. For example, we may have $A$ being $2^{n-1} \times 2^{n-1}$, such that $A$ inhabits one quarter of the matrix $U$. This example represents the case when one of the $n$ qubits is special, drawn here as a circuit representation of $U$ with the top qubit being separated from the remaining $n - 1$ qubits:
+
+
+
+
+\begin{claim}
+    Quantum singular value transformation (informal) \\
+    Given $U$ encoding $A$, one can systematically construct a new unitary $U'$ which block encodes $\text{poly}_d^{\text{SV}}(A)$, where in terms of the singular value decomposition of $A$:
+    \begin{equation}
+        A = \sum_\lambda \lambda \ketbra{v_\lambda}{w_\lambda}
+    \end{equation}
+    the polynomial is defined as 
+    \begin{equation}\poly_d^{\text{SV}}(A) = \sum_\lambda \poly_d(\lambda)\ketbra{v_\lambda}{w_\lambda}\end{equation}
+    and $d$ is the degree of the polynomial. This requires $O(d)$ gates and accesses to $U$. Note that only $\sim d$ gates and accesses are required for a degree $d$ polynomial, independent of the size of $A$.
+\end{claim}
+
+Quantum algorithms can be mapped onto quantum singular value transformation and vice versa, based on choices for just two ingredients:
+\begin{itemize}
+    \item The block-encoded operator $A$ - this may be the Hamiltonian we want to simulate, or the matrix we want to invert, or an oracle capturing the search problem
+    \item The degree $d$ polynomial designed for the task
+\end{itemize}
+Quantum signal processing is the method by which a quantum circuit is specified to realize a desired polynomial transformation, and it will be seen that this can be accomplished efficiently. QSVT encompasses the general method of transforming arbitrary implicitly encoded $A$.
+
+\subsection{Quantum Signal Processing}
+Consider a single qubit system undergoing the dynamics described \\
+\begin{center}
+\begin{quantikz}
+     & \gate{\phi_{d}} & \gate{R_x(\theta)} & \gate{\phi_{d - 1}} & \gate{R_x(\theta)} & \ \ldots \  & \gate{R_x(\theta)} & \gate{\phi_{0}} & 
+\end{quantikz}
+\end{center}
+where $\phi_k$ is a phase rotation (about $\hat{z}$) by angle $\phi_k$
+\begin{equation}
+    \begin{quantikz}
+        & \gate{\phi_k} & 
+    \end{quantikz} = e^{i \phi_k Z}
+\end{equation}
+and $R_x(\theta)$ is the usual single qubit rotation by angle $\theta$ about $\hat{x}$
+\begin{equation}
+    \begin{quantikz}
+        & \gate{R_x(\theta)} & 
+    \end{quantikz} = e^{i \phi_k X/2} = \begin{pmatrix}
+        \cos \frac{\theta}{2} & -i \sin \frac{\theta}{2} \\
+        -i \sin \frac{\theta}{2} & \cos \frac{\theta}{2}
+    \end{pmatrix}
+\end{equation}
+
+Let $U_{\vec{\phi}, \theta}$ be the unitary described by circuit. This circuit has $d+1$ phase rotations, and $d$ queries to $R_x(\theta)$. Let
+\begin{align}
+    a = \cos \left(- \frac{\theta}{2}\right) \\
+    \sqrt{1-a^2} = \sin \left(- \frac{\theta}{2}\right)
+\end{align}
+where $a$ is a real number in the interval $[-1,1]$, such that we may write
+\begin{equation}
+    W(a) = \begin{pmatrix}
+        a & i \sqrt{1-a^2} \\ 
+        i\sqrt{1-a^2} & a
+     \end{pmatrix} = R_x(-2\cos^{-1}a)
+\end{equation}
+The parameter $a$ (or equivalently $\theta$) is the input signal, and $R_x(\theta)$ is known as the signal operator; these are given to us, and outside of our control. The set of phase
+angles $\vec{\phi} = {\phi_k}$ are under our control, and these describe how the signal is processed. \\
+
+The quantum signal processing theorem establishes that:
+\begin{theorem}
+    For 
+    \begin{equation}
+        U_{\vec{\phi}} = e^{i \phi_0 Z} \prod_{k=1}^d W(a) e^{i \phi_k Z} = \begin{pmatrix}
+            P(a) & iQ(a)\sqrt{1-a^2} \\ iQ^*(a)\sqrt{1-a^2} & P^*(a)
+        \end{pmatrix}
+    \end{equation}
+    where $P$ and $Q$ are complex polynomials such that 
+    \begin{itemize}
+        \item $\deg(P) \leq d$ and $\deg(Q) \leq d-1$
+        \item $P$ has parity $d \!\mod 2$ and $Q$ has parity $(d-1) \!\mod 2$
+        \item $\abs{P}^2 + (1-a^2) \abs{Q}^2 = 1$
+    \end{itemize}
+    and moreover, any polynomials $P$, $Q$ satisfying these constraints can be realized by some choice of the phase angles $\vec{\phi}$
+\end{theorem}
+
+
+
+\subsection{Eigenvalue transformation}
+Perhaps the most powerful aspect of quantum signal processing and quantum singular value transformations is that the signal a need not be a classical variable of unknown value, but instead, it may be a quantum variable, potentially in superposition. This is illustrated by the quantum eigenvalue transformation algorithm. Suppose we have a signal unitary on $n + 1$ qubits which may be expressed as
+\begin{equation}
+    U = \begin{pmatrix}
+        H & \sqrt{1-H^2} \\
+        \sqrt{1-H^2} & -H
+    \end{pmatrix}
+\end{equation}
+where $H$ is some Hermitian matrix, and for $H$ expressed in its eigenbasis:
+\begin{equation}
+    H = \sum_\lambda \lambda \ketbra{v_\lambda}
+\end{equation}
+
+
+\subsection{Quantum singular value transformation}
+
+
+

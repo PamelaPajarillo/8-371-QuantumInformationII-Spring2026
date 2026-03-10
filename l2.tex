@@ -1,0 +1,225 @@
+\section{Lecture 2: Quantum Operations - 4 February 2026}
+Outline: 
+\begin{enumerate}[label=(\Roman*)]
+    \item System-environment model
+    \item Definition: Quantum Operations
+    \item Operator sum representation (OSR)
+    \item OSR is not unique
+    \item First look: quantum error detection
+\end{enumerate}
+Last time: Density matrix $\rho = \sum_k p_k \ketbra{\psi_k}$ or pure states  
+
+
+\subsection{System-environment model}
+Hilbert spaces: 
+\begin{itemize}
+    \item $\mathcal{H}$: the one we care about
+    \item $\mathcal{G}$: environment
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{ c | c }
+Object & Lives in/on  \\
+\hline
+$\ket{\psi}$ & $\mathcal{H}$  \\  
+$\ket{e}$ & $\mathcal{G}$  \\  
+$\ket{\Phi}$ & $\mathcal{G} \otimes \mathcal{H}$   \\  
+$E_k$ & $\mathcal{G} \otimes \mathcal{H}$   \\  
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{quantikz}
+    \lstick{$\ket{\psi}$ or $\rho_{in}$} & \gate[2]{U} & \rstick{$\rho_{out}$? } \\
+    \lstick{$\ket{e}$} &  & \meter{}
+\end{quantikz} 
+\end{center}
+Claim: From the ``church of the larger Hilbert space", this structure can model can essential model anything you can do to a quantum system, i.e. black box included \\
+This environment corresponds to the entire universe, something we don't have control over, so we're actually not measuring, but it is a useful mathematical tool (measurement gets thrown away). \\
+\begin{equation}
+    \ket{\psi} \otimes \ket{e} \rightarrow \underbrace{U [\ket{\psi} \otimes \ket{e}]}_{\ket{\Phi}} = 
+\end{equation}
+When we measure, we can pick some basis $\ketbra{e_0}, \ketbra{e_1}, \ldots$, then $\rho_{out}$ possible measurements:
+\begin{align}
+    [\bra{e_0} \otimes & \mathbb{1}] \ket{\Phi} \\ 
+    [\bra{e_1} \otimes & \mathbb{1}] \ket{\Phi} \\ 
+    &\vdots
+\end{align}
+The density matrix $\ket{\rho_{out}}$ 
+\begin{equation}
+    \rho_{out} = \sum_k (\bra{e_k} \otimes \mathbb{1}) \ketbra{\Phi} (\ket{e_k} \otimes \mathbb{1})
+\end{equation}
+But we don't have control over the environment, and we don't even know the input $\ket{e}$ and the measurement basis. Ideally, we want to get rid of the environment. 
+\begin{align}
+    [\bra{e_k} \otimes \mathbb{I}) \ket{\Phi}] &= [\bra{e_k} \otimes \mathbb{I}] U [\ket{e} \otimes \ket{\psi}] \\
+    &= \underbrace{[\bra{e_k} \otimes \mathbb{I}] U [\ket{e} \otimes \mathbb{I}]}_{\text{projecting to }\mathcal{H}} \underbrace{\ket{\psi}}_{\mathcal{H}}
+\end{align}
+Because we're multiplying by states in $\mathcal{G}$ on both sides, we're projecting down to $\mathcal{H}$
+Let us define
+\begin{equation}
+    E_k = [\bra{e_k} \otimes \mathbb{I}] U [\ket{e} \otimes \mathbb{I}]
+\end{equation}
+Now we can the possible states of $\rho_{out}$ to be 
+\begin{align}
+    E_0 &\ket{\Phi} \\ 
+    E_1 &\ket{\Phi} \\ 
+    &\vdots
+\end{align}
+The expression for $\rho_{out}$ is
+\begin{equation}
+    \rho_{out} = \sum_k E_k \ketbra{\psi}E_k^\dagger 
+\end{equation}
+If we substitute the input $\ket{\psi}$ to $\rho_in$, then 
+\begin{equation}
+    \rho_{out} = \sum_k E_k \rho_{in} E_k^\dagger 
+\end{equation}
+$E_k$ is not unitary. It is a fact that 
+\begin{equation}
+    \sum_k E_k^\dagger E_k = \mathbb{1}
+\end{equation}
+This can be shown by first calculating $E_k^\dagger$,
+\begin{equation}
+    E_k^\dagger = (\bra{e} \otimes I ) U^
+    \dagger (\ket{e_k} \otimes I )
+\end{equation}
+Then
+\begin{equation}
+    E_k^\dagger E_k = (\bra{e} \otimes \mathbb{1} ) U^
+    \dagger (\ket{e_k} \otimes \mathbb{1}) (\ket{e_k} \otimes \mathbb{1}) U  (\bra{e} \otimes \mathbb{1} )
+\end{equation}
+Combining the middle terms, $(\ket{e_k} \otimes I) (\bra{e_k} \otimes \mathbb{1}) = \ketbra{e_k} \otimes \mathbb{1}$. Then summing over $k$,
+we have that 
+\begin{equation}
+    \sum_k \ketbra{e_k} \otimes \mathbb{1} = \mathbb{1} \otimes \mathbb{1}
+\end{equation}
+Then, 
+\begin{align}
+    \sum_k E_k^\dagger E_k &= (\bra{e} \otimes \mathbb{1} ) U^
+    \dagger (\ket{e_k} \otimes \mathbb{1}) (\ket{e_k} \otimes \mathbb{1}) U  (\bra{e} \otimes \mathbb{1} ) \\
+    &= (\bra{e} \otimes \mathbb{1} ) U^
+    \dagger U \ket{e} \otimes \mathbb{1} \\
+    & = \mathbb{1}_{\mathcal{H}}
+\end{align}
+The dimension of $\mathcal{G}$ does not need to be bigger than $\mathcal{H}$ because if we have a maximally entangled state in $\mathcal{H}$ there are extra dimensions in $\mathcal{G}$ that will not be used.\\
+Without loss of generality we can take $\ket{e} = \ket{0}$. \\
+Density matrices are just tools to be able to throw away parts of the Hilbert space we don't want. 
+
+
+\subsection{Definition: Quantum Operation (channels)}
+Quantum channels should be the most general thing you can do to a quantum system. ``Things that transform mixed states into mixed states" (we need a valid output density matrix). Density matrices must have $Tr(\rho) = 1$. \\
+Let $\mathcal{E}$ be a generic quantum operation, then we must have $Tr(\mathcal{\rho}) = 1$.\\
+If $\rho_a,\rho_b$ are density matrices, and let $\alpha,\beta > 0$, $\alpha\rho_a + \beta\rho_b$ is a density matrix (up to normalization). This implies that $\mathcal{E}[\alpha\rho_a + \beta\rho_b] = \alpha \mathcal{E}(\rho_a) + \beta \mathcal{E}(\rho_b)$. \\
+Positive-semidefinite: all eigenvalues are greater than 0 (any principle minor must have positive determinant). Additionally, if we have $\ket{\psi} = \sum_i \alpha_i \ket{i}$, then $\ketbra{\psi} = \alpha_i^* \alpha^i$ must be a real non-negative number. We must have positive semidefinite in order for it to make sense physically. \\
+$\mathcal{E}$ must be a ``completely positive" map, which means it keeps things positive-semidefinite. 
+
+\begin{example}
+    Suppose we have 
+    \begin{equation}
+        \rho = \begin{pmatrix}
+            a & b \\ d & c
+        \end{pmatrix}
+    \end{equation}
+    Example of wrong math: Is 
+    \begin{equation}
+        \mathcal{E}(\rho) = \begin{pmatrix}
+            a & d \\ b & c
+        \end{pmatrix}
+    \end{equation}
+    a legal map? No.\\
+    Just any $\rho \rightarrow \mathcal{E}(\rho)$ remaining positive semi definite is not enough for complete positivity. \\
+    $\mathcal{E}$ is currently on 1 qubit. \\
+    Let's consider $ \mathbb{1} \otimes \mathcal{E}$ and $\ket{\psi} = \ket{00} + \ket{11}$. Then 
+    \begin{equation}
+        \ketbra{\psi} = \begin{pmatrix}
+            1 & 0 & 0 & 1 \\
+            0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 \\
+            1 & 0 & 0 & 1 
+        \end{pmatrix}
+    \end{equation}
+    Then
+    \begin{equation}
+        (\mathbb{1} \otimes \mathcal{E}) \ketbra{\psi} = \begin{pmatrix}
+            1 & 0 & 0 & 0 \\
+            0 & 0 & 1 & 0 \\
+            0 & 1 & 0 & 0 \\
+            0 & 0 & 0 & 1 
+        \end{pmatrix}
+    \end{equation}
+    i.e. if we tensor product it with some external system, it also needs to be positive semi-definite. This is also true in any generalization $\ket{\psi}= \sum_i^d \ket{i}\otimes \ket{i}$. \\ 
+    Physics intuition: suppose we have two mixed states $\rho$ and $\phi$, and we applied $\mathcal{E}$ to $\rho$, the entire system must still be quantum. 
+\end{example}
+
+The system-environment model and quantum operations are equivalent. The system-environment model captures everything in quantum operations in a strict way. i.e. anything we can write down in particular using
+\begin{equation}
+    \rho_{out} = \sum_k = E_k\rho_{in}E_k^\dagger \qquad \sum_k E_k^\dagger E_k = \mathbb{1}
+\end{equation}
+These $E_k$'s are not unique (i.e. measurement basis can be different - we can insert a unitary $V$ before we make a measurement). 
+\begin{center}
+\begin{quantikz}
+    \lstick{$\rho_{in}$} & \gate[2]{U}&  & \rstick{$\ket{\rho_{out}}$? } \\
+    \lstick{$\ket{e}$} & & \gate{V} & \meter{}
+\end{quantikz} 
+\end{center}
+
+$E_k$'s are called Krauss operators. \\
+Let $F_j$ be the new Krauss operators. Then
+\begin{equation}
+    F_j = \sum_k V_{jk} E_k
+\end{equation}
+
+\begin{example}
+    Suppose 
+    \begin{center}
+    \begin{quantikz}
+        \lstick{$\rho_{in}$} & \gate[]{U}&   \rstick{$\ket{\rho_{out}}$ } \\
+        \lstick{$\ket{e}$} & &      
+    \end{quantikz} 
+    \end{center}
+    The Krauss operator is $E_0 = 0$ because output is $U \rho_{out} U^\dagger$. \\
+\end{example}
+
+\begin{example}
+    Suppose $\{\Pi_i\}$ are a set of projectors.
+    \begin{center}
+    \begin{quantikz}
+        \lstick{$\rho_{in}$} & \meter{\Pi_i}&   \rstick{$\ket{\rho_{out}}$ } \\
+        \lstick{$\ket{e}$} & &      
+    \end{quantikz} 
+    \end{center}
+    But we don't look at the measurement outcome (black box). The Krauss operator is ${E_k} = {\Pi_i}$. Now let's look at
+    \begin{center}
+    \begin{quantikz}
+        \lstick{$\rho_{in}$} & \ctrl{1}&   \rstick{$\ket{\rho_{out}}$ } \\
+        \lstick{$\ket{0}$} & \gate{} &      
+    \end{quantikz} 
+    \end{center}
+    where the gate is a unitary operation $U$. Suppose 
+    \begin{equation}
+        \Pi_i = \ketbra{\psi_k}
+    \end{equation}
+    where $\ket{\psi_k}$ lives on $\mathcal{H}$. Then 
+    \begin{equation}
+        U \ket{\psi_k} \ket{0} \rightarrow \ket{\psi_k} \ket{\psi_k}
+    \end{equation}
+    if we measure, we'll be projecting on whatever $\ket{\psi_k}$ is.
+\end{example}
+
+\begin{claim}
+    Suppose
+    \begin{equation}
+        E_0 = \begin{pmatrix}
+            1 & 0 \\ 0 & \sqrt{1 - \lambda} 
+        \end{pmatrix} \quad E_1 = \begin{pmatrix}
+            0 & 0 \\ 0 & \sqrt{\lambda}
+        \end{pmatrix}
+    \end{equation}
+    These are phase dampening channel. For intuition, if we have some arbitrary density matrix, 
+    \begin{equation}
+        \rho = \begin{pmatrix}
+            a & b \\ b^* & c
+        \end{pmatrix} \mapsto \begin{pmatrix}
+            a & \sqrt{1 - \lambda} b \\ \sqrt{1 - \lambda} b^* & c
+        \end{pmatrix}
+    \end{equation}
+\end{claim}

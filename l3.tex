@@ -1,0 +1,250 @@
+\section{Lecture 3: Quantum Error Correction and Stabilizers - 09 February 2026}
+Outline:
+\begin{enumerate}[label=(\Roman*)]
+    \item Quantum Coding
+    \item Operator Measurements to Syndromes
+    \item Shor's 9-qubit code
+    \item QEC Criteria
+    \item Stabilizers
+\end{enumerate}
+
+Last time: \\
+Operator sum representation:
+\begin{equation}
+    \mathcal{E}(\rho) = \sum_k E_k \rho E_k^\dagger \text{, where } \sum_k E_k^\dagger E_k = I
+\end{equation}
+This equation describes how quantum noise is modeled. 
+
+\subsection{Quantum Coding}
+\begin{definition}
+    An $[[n,k]]$ quantum code $C$ is a $k$-qubit subspace of an $n$-qubit Hilbert space. 
+\end{definition}
+\begin{example}
+    $n = 3, k=1$ defined by $\ket{0_L} = \ket{000}$ and $\ket{1_L} = \ket{111}$ \\
+    Errors: Bit flip: $\mathcal{E}_{BF}(\rho) = (1-p) \rho + p X\rho X$ (on a single qubit) \\
+    Transmit $a\ket{000} + b\ket{111}$, then 
+    \begin{center}
+    \begin{tabular}{ c | c | c }
+    Receive & Probability & Decode\\
+    \hline
+    $a\ket{000} + b\ket{111}$ & $(1 -p)^3$ & $a\ket{0} + b\ket{1}$ \\  
+    $a\ket{001} + b\ket{110}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ \\  
+    $a\ket{010} + b\ket{101}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ \\  
+    $a\ket{100} + b\ket{001}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ \\  
+    $a\ket{011} + b\ket{100}$ & $p^2(1-p)$ & $a\ket{1} + b\ket{0}$ \\  
+    $a\ket{101} + b\ket{010}$ & $p^2(1-p)$ & $a\ket{1} + b\ket{0}$ \\  
+    $a\ket{100} + b\ket{001}$ & $p^2(1-p)$  & $a\ket{1} + b\ket{0}$\\  
+    $a\ket{111} + b\ket{000}$ & $p^3$ & $a\ket{1} + b\ket{0}$
+    \end{tabular}
+    \end{center}
+    The last 4 cases are the errors. The probability in decoded state:
+    $P_err= 3p^2(1-p) + p^3 = O(p^2)$. In the original case, we had $O(p)$. 
+\end{example}
+
+
+
+\subsection{Operator Measurement and Syndromes}
+\begin{definition}
+    Given $U$ (could act on multiple qubits not just 1) with eigenvalues $\pm 1$ and eigenstates $\ket{u_\pm}$, ``measuring $U$" is 
+    \begin{center}
+    \begin{quantikz}[row sep=0.6cm, column sep=0.8cm, slice all, slice titles=Slice \col,slice style=blue,slice label style ={inner sep=1pt,anchor=south west,rotate=40}]
+    \lstick{$\ket{0}$} & \gate{H} & \ctrl{1} & \gate{H} & \meter{m} \\
+    \lstick{$c_0 \ket{u_-} + c_1 \ket{u_+}$}         & \qwbundle{} & \gate{U} & \qwbundle{} & \rstick{$\ket{\phi}$} 
+    \end{quantikz}
+    \end{center}
+    At Slice 1: 
+    \begin{equation}
+        \frac{1}{\sqrt{2}}(\ket{0} + \ket{1})  [c_0 \ket{u_+} + c_1\ket{u_-}]
+    \end{equation}
+    At Slice 2:  
+    \begin{equation}
+        \frac{\ket{0}}{\sqrt{2}}[c_0 \ket{u_+} + c_1\ket{u_-}] + \frac{\ket{1}}{\sqrt{2}} [c_0 \ket{u_+} - c_1\ket{u_-}]
+    \end{equation}
+    At Slice 3:
+    \begin{equation}
+        \frac{\ket{0} + \ket{1}}{2}[c_0 \ket{u_+} + c_1\ket{u_-}] + \frac{\ket{0} + \ket{1}}{\sqrt{2}} [c_0 \ket{u_+} - c_1\ket{u_-}] = \ket{0}c_0\ket{u_+} + \ket{1} c_1 \ket{u_-}
+    \end{equation}
+    Measure $m=0$, $\ket{\phi} = \ket{U_+}$; Measure $m=1$, $\ket{\phi} = \ket{U_-}$.\\
+    We have segmented the Hilbert space into its two halves $\ket{u_-}$ and $\ket{u_+}$
+\end{definition}
+Error correction and Syndromes: 
+\begin{enumerate}
+    \item Measure ``Syndrome Ops"
+    \item Apply a unitary ``Recover Ops" $R$
+\end{enumerate}
+Let $U_1 = Z_1Z_2=ZZI$ and $U_2 = Z_2Z_3 = IZZ$, then
+\begin{center}
+    \begin{tabular}{ c | c | c | c | c | c}
+    Receive & Probability & Decode & $U_1=ZZI$ & $U_2=IZZ$ & Recovery $R$\\
+    \hline
+    $a\ket{000} + b\ket{111}$ & $(1 -p)^3$ & $a\ket{0} + b\ket{1}$ & 0 & 0 & $I$\\  
+    $a\ket{001} + b\ket{110}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ & 0 & 1 & $X_3$\\ 
+    $a\ket{010} + b\ket{101}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ & 1 & 1 &$X_2$\\
+    $a\ket{100} + b\ket{001}$ & $p(1-p)^2$ & $a\ket{0} + b\ket{1}$ & 1 & 0 & $X_1$\\
+    $a\ket{011} + b\ket{100}$ & $p^2(1-p)$ & $a\ket{1} + b\ket{0}$ & & & \\
+    $a\ket{101} + b\ket{010}$ & $p^2(1-p)$ & $a\ket{1} + b\ket{0}$ & & & \\
+    $a\ket{100} + b\ket{001}$ & $p^2(1-p)$  & $a\ket{1} + b\ket{0}$ & & & \\
+    $a\ket{111} + b\ket{000}$ & $p^3$ & $a\ket{1} + b\ket{0}$ & & & \\
+    \end{tabular}
+\end{center}
+\begin{definition}
+    Fidelity: If the final result is a density matrix $\rho$, given the ideal state $\ket{\psi}$, the definition of fidelity is given by $F(\ket{\psi}, \rho) = \braket{\psi|\rho|\psi} \geq 1 - 3p^2(1-p)-p^3 = 1 - O(p^2)$
+\end{definition}
+
+Quantum Circuit: 
+\begin{center}
+\begin{quantikz}
+ \wireoverride{n} &  \wireoverride{n} & \wireoverride{n} & \wireoverride{n} \lstick{$\ket{0}$} & \gate{H} & \ctrl{1} & \ctrl{2} & \gate{H} & \meter{m_0} & \cw & \cwbend{1} \\ 
+\lstick{$a\ket{0} + b\ket{1}$} & \ctrl{1}  & \ctrl{2} & \gate{\mathcal{E}_{BF}} & \qw  & \gate{Z} & \qw  & \qw  & \qw & \qw & \gate[wires=3]{R} & \qw \\
+\lstick{$\ket{0}$} & \targ{} &\qw & \gate{\mathcal{E}_{BF}} & \qw & \qw & \gate{Z} & \gate{Z} & \qw  &\qw  & & \qw \\
+\lstick{$\ket{0}$} &   \qw & \targ{} & \gate{\mathcal{E}_{BF}} & \qw & \gate{Z} & \qw & \qw & \qw  & \qw & & \qw \\
+ \wireoverride{n} &  \wireoverride{n} & \wireoverride{n} & \wireoverride{n} \lstick{$\ket{0}$} & \gate{H} & \ctrl{-1} & \qw & \ctrl{-2} & \gate{H} & \meter{m_1} & \cwbend{-1} \\ 
+\end{quantikz}
+\end{center}
+The result will be identical to the input state encoded state right after the CNOTs. This is QEC for a bit-flip channel. 
+
+
+\subsection{Shor's 9-qubit code}
+In the previous section, we have an error-correcting code for bit-flips. We need a quantum circuit phase-flip error-correcting code. \\
+Recall: $\mathcal{E}_{PF} = (1-p)\rho + p Z\rho Z$ \\
+Recall: $HZH = X$, $HXH = Z$, $\ket{\pm} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1})$. \\
+We can write 
+\begin{equation}
+    H \mathcal{E}_{PF}(H\rho H )H = \mathcal{E}_{BF}(\rho) 
+\end{equation}
+Define 
+\begin{align}
+    \ket{0_L} &= \ket{+++} \label{plus}\\ 
+    \ket{1_L} &= \ket{---} \label{minus}
+\end{align}
+The errors are $\ket{+} \Leftrightarrow \ket{-}$. 
+\begin{claim}
+    Arbitrary single qubit errors are a combination of $= X,Z,XZ$ 
+\end{claim}
+Recall: $\mathcal{E}(\rho) = \sum_k E_k \rho E_k^\dagger$. \\
+Let $\sigma_j = \{I,X,Y,Z\}$. Then it follows that any $2 \times 2$ matrix can be written as a linear combination of those 4 matrices. Therefore, $E_k = \sum_j c_{kj} \sigma_j$. Then we get 
+\begin{equation}
+    \mathcal{E}(\rho) = \sum_{k, j'} c_{kj}\sigma_j \rho \sigma_{j'}c_{kj'}^* = \sum_{jj'} \chi_{jj'}\sigma_j\rho \sigma_{j'}
+\end{equation}
+where $\chi_{jj'} = \sum_k c_{kj}c_{kj}^*$. This $\chi$-matrix representation is a density matrix.
+\begin{example}
+    Consider a small rotation: $R_x(2\epsilon) \simeq \ket{\psi} - i \epsilon X \ket{\psi}$ ($X$ is bit flip). We want to say either identity happened or a bit flip happen and nothing in between. This contradicts because this a real unitary. Why can we say that either identity or a bit flip when it clearly experiences a superposition? \\
+    \begin{equation}
+        \mathcal{E}(\rho) \approx (1- \epsilon^2)\rho - i \epsilon X\rho + i \epsilon \rho X + \epsilon^2 X\rho X
+    \end{equation}
+    $- i \epsilon X\rho + i \epsilon \rho X$ are the offending terms and are called ``coherent" error. We do not have to worry about them because \textit{they disappear in the syndrome measurement}. The syndrome measurement projects the code state into either having a identity or a bit flip. \\
+    To emphasize: \textit{syndrome measurement project environment into definite error states!}
+\end{example}
+
+9 qubit code: $[[9,1]]$, encodes 1 logical qubit with 9 physical qubits \\
+Code states:
+\begin{align}
+    \ket{0_L} &= \frac{(\ket{000} + \ket{111})^{\otimes 3}}{\sqrt{8}} \quad \text{``}+_L+_L+_L \text{"}\\ 
+    \ket{1_L} &= \frac{(\ket{000} - \ket{111})^{\otimes 3}} {\sqrt{8}} \quad \text{``}-_L-_L-_L \text{"}
+\end{align}
+The extra layer of the ``+++" and ``---" gives \eqref{plus} and \eqref{minus}, First layer corrects bit flips and the second layer corrects phase flips. This is called a \textit{concatenated code} - we concatenated a phase flip code on top of a bit flip code. \\
+This code corrects any single qubit error. It does so using syndrome operators (and recover operators given by the following: \\
+Bit flips: 
+\begin{align}
+    &Z_1Z_2  \quad Z_2Z_3 \\
+    &Z_4Z_5  \quad Z_5Z_6 \\
+    &Z_7Z_8  \quad Z_8Z_9 \\
+    \text{corresponds to }& ZZI \hspace*{0.45cm} IZZ \text{ from previous example}
+\end{align}
+Phase flips:
+\begin{align}
+    X_1X_2X_3X_4X_5X_6 \\
+    X_4X_5X_6X_7X_8X_9 \\
+\end{align}
+\begin{example}
+    Suppose we have a $Z_3$ error. This means our states are 
+    \begin{align}
+        \ket{0_L} &= (000 - 111)(000 + 111)(000 + 111) \\
+        \ket{1_L} &= (000 + 111)(000 - 111)(000 - 111) 
+    \end{align}
+    Which one of the syndrome operators is gonna give us 1? \\
+    $Z_1Z_2 : m = 0$, $Z_2Z_3 : m = 0$, similarly for rest of bit flips \\
+    $X_1X_2X_3X_4X_5X_6: m = 1$, $X_4X_5X_6X_7X_8X_9: m = 1$ \\
+    The phase flips are parity operator for signs. The bit flips are parity operator for bit values. 
+\end{example}
+(What $n$ and $\#$ of syndrome operators are minimal?) \\
+\begin{fact}
+    9-qubit code: Every single qubit error gives a unique syndrome bit string. \\
+    Some two-qubit errors also can give a unique syndrome bit string
+\end{fact}
+Issues: 
+\begin{itemize}
+    \item What are efficient families of $[[n,k]]$ codes? We would like the rate $\frac{k}{n}$ as $n \rightarrow \infty$ to not go to zero, i.e. finite rate code families
+    \item We also want to be able to compute on codes
+    \item We want minimum possible complexity of encoding and decoding (example: locally testable codes - where we can figure out the syndrome, what error occurred, by only looking at a small window of qubits?)   
+\end{itemize}
+
+
+
+\subsection{Quantum Error Correction Criteria}
+\begin{theorem}
+    Let $C$ be a quantum code defined by the orthonormal states $\{\ket{\psi_k}\}$ and let $\mathcal{E}(\rho) = \sum_k E_k \rho E_k^\dagger$ \\
+    Then $\exists$ quantum operation $R$ correcting error  $\epsilon$ on the the code space $C$ iff
+    \begin{itemize}
+        \item orthogonality: $\braket{\psi_l |E_j^\dagger E_k|\psi_l} = 0,  \forall j \neq k, \forall l$
+        \item non-deformation: $\braket{\psi_l|E_k^\dagger E_k| \psi_l} = c_k, \forall l $
+    \end{itemize}
+\end{theorem}
+
+\textit{Correction after class:} \\ 
+If $\{\ket{\psi_k}\}$ is an orthonormal basis for the codespace (where $k$ represents logical states $\ket{0_L}, \ket{1_L}$, etc.), the Knill--Laflamme (KL) criteria for quantum error
+correction codes is:
+\begin{equation}
+\braket{\psi_a | E_i^\dagger E_j | \psi_b} = \alpha_{ij}\delta_{ab}
+\end{equation}
+What This Tells Us (The ``Rules of the Game'') \\
+This criteria reveals two specific requirements that must be met for every pair of basis states
+$|\psi_a\rangle$ and $|\psi_b\rangle$:
+\begin{enumerate}
+\item \textbf{The ``orthogonality'' requirement ($a\neq b$):}
+
+When $a\neq b$, the right side of the equation becomes zero:
+\begin{equation}
+\braket{\psi_a | E_i^\dagger E_j | \psi_b} = 0
+\end{equation}
+This means that an error $E_j$ acting on one basis state must result in a state that is
+orthogonal to the state produced by error $E_i$ acting on a different basis state.
+Essentially, the errors cannot ``cross-talk'' or smear the two distinct pieces of logical
+information into each other.
+
+\item \textbf{The ``non-deformation'' requirement ($a=b$):}
+
+When $a=b$, the equation simplifies to:
+\begin{equation}
+\braket{\psi_a | E_i^\dagger E_j | \psi_a} = \alpha_{ij}
+\end{equation}
+Crucially, $\alpha_{ij}$ is a constant that does not depend on $a$. This implies that the
+transition amplitude between two error states must be identical for every basis vector in the
+code. If this value changed depending on whether you were in state $\ket{\psi_1}$ or
+$\ket{\psi_2}$, the environment would effectively be ``measuring'' the state of the qubit.
+By keeping $\alpha_{ij}$ independent of the basis, the error process remains ``blind'' to the
+stored quantum information.
+\end{enumerate}
+
+
+\subsection{Stabilizers}
+\begin{definition}
+    The Pauli group $G_n$ on $n$ qubits is all $n$-fold tensor products of $\{X,Z,XZ\}$ and $\{\pm 1, \pm i\}$ 
+\end{definition}
+\begin{example}
+    For $n=1$, $G = \{X, Y,Z, \ldots\}$
+\end{example}
+Note: $\forall g, h \in G_n$, either $gh=hg$ (commute) or $gh=-hg$ (anticommute)
+\begin{definition}
+    A stabilizer for  $\{\ket{\psi_l}\} \doteq V_s$, ($\ket{\psi_l}$ are like basis vectors, $V_s$ is the vector space) is the set \begin{equation}S = \{g \in G_n \,\, |\,\,  g\ket{\psi} = \ket{\psi}, \, \forall \ket{\psi} \in V_s\}\end{equation} By convention $-I \notin S$. 
+\end{definition}
+Note that $S$ is an Abelian group. 
+\begin{example} Stabilizer examples:
+    \begin{itemize}
+        \item $V_s = \{\ket{00}\}$, then $S = \{II, ZZ, ZI, IZ\} = \langle IZ,ZI \rangle $ 
+        \item $V_s = \{\frac{\ket{00} + \ket{11}}{\sqrt{2}}\}$, then $S = \langle XX,ZZ \rangle$
+        \item $V_s = \{\ket{000}, \ket{111}\}$, then $S = \langle ZZI, IZZ \rangle$
+    \end{itemize}
+    Note that if $\dim(V_s) = 2^k$, then $k = n - (\text{min } \# \text{ gens for } S)$
+    
+\end{example}

@@ -1,0 +1,616 @@
+\section{PSet 2 - 15 February 2025}
+
+\subsection{Problem 1 - Random $Z$-rotations gives phase damping}
+Consider a quantum circuit which rotates a single qubit around the $\hat{z}$ axis by a random angle:
+\begin{center}
+\begin{quantikz}
+\lstick{$\rho$}         \qw & \gate{Z(\theta)} & \qw 
+\end{quantikz}
+\end{center}
+where the input qubit is the arbitrary density matrix
+\begin{equation}
+    \begin{pmatrix} a & b \\ c & d \end{pmatrix}
+\end{equation}
+and the gate $Z_\theta$ performs the unitary transform 
+\begin{equation}
+    Z_\theta = e^{-i\theta Z / 2} = \cos\frac{\theta}{2} \mathbb{1} - i \sin \frac{\theta}{2} Z = \begin{pmatrix}\cos\frac{\theta}{2} & 0 \\ 0 & \cos\frac{\theta}{2}\end{pmatrix} - i \begin{pmatrix}\sin\frac{\theta}{2} & 0 \\ 0 & -\sin\frac{\theta}{2}\end{pmatrix} = \begin{pmatrix}\cos\frac{\theta}{2}-i\sin\frac{\theta}{2} & 0 \\ 0 & \cos\frac{\theta}{2} +i \sin\frac{\theta}{2}\end{pmatrix}
+\end{equation} 
+We can write $Z_\theta$ as 
+\begin{equation}
+    Z_\theta = e^{-i\theta Z / 2} = \begin{pmatrix}e^{-i\frac{\theta}{2}} & 0 \\ 0 & e^{i\frac{\theta}{2}}\end{pmatrix}
+\end{equation} 
+and $\theta$ is a random variable with probability distribution
+\begin{equation}
+    p(\theta) = \frac{1}{2\sqrt{\pi \sigma}} e^{-\theta^2/4\sigma}
+\end{equation}
+The output of this circuit is 
+\begin{equation}
+    \mathcal{E}_{PD}(\rho) = \int_{-\infty}^{\infty}Z_\theta \rho Z_\theta^\dagger p(\theta) d\theta
+\end{equation}
+which maybe understood as being an operator sum representation with an infinite continuously parameterized set of operation elements. \\
+We expect the output state $\rho' = \mathcal{E}_{PD}(\rho)$ to look like
+\begin{itemize}
+    \item The diagonal elements of the input density matrix will stay unchanged
+    \item As $\sigma$ increases, the amount of phase damping increases.
+\end{itemize}
+Let the matrix elements of the output state $\rho' = \mathcal{E}_{PD}(\rho)$ be 
+\begin{equation}
+    \rho' = \begin{pmatrix}
+        \rho_{00}' & \rho_{01}' \\ \rho_{10}' & \rho_{11}'
+    \end{pmatrix}
+\end{equation}
+Then 
+\begin{align}
+    \mathcal{E}_{PD}(\rho) &= \int_{-\infty}^{\infty} Z_\theta \rho Z_\theta^\dagger p(\theta) d\theta \\
+    &= \int_{-\infty}^{\infty} e^{-i\theta Z/2} \rho e^{i\theta Z/2} p(\theta) d\theta \\
+    &= \int_{-\infty}^{\infty} \begin{pmatrix}e^{-i\frac{\theta}{2}} & 0 \\ 0 & e^{i\frac{\theta}{2}}\end{pmatrix}   \begin{pmatrix} a & b \\ c & d \end{pmatrix} \begin{pmatrix}e^{i\frac{\theta}{2}} & 0 \\ 0 & e^{-i\frac{\theta}{2}}\end{pmatrix} p(\theta) d\theta \\
+    &=  \int_{-\infty}^{\infty} \begin{pmatrix} ae^{-i\frac{\theta}{2}} & be^{-i\frac{\theta}{2}} \\ ce^{i\frac{\theta}{2}} & de^{i\frac{\theta}{2}} \end{pmatrix} \begin{pmatrix}e^{i\frac{\theta}{2}} & 0 \\ 0 & e^{-i\frac{\theta}{2}}\end{pmatrix} p(\theta) d\theta \\
+    &= \int_{-\infty}^{\infty} \begin{pmatrix} a & b e^{-i \theta} \\ ce^{i \theta} & d \end{pmatrix}  p(\theta) d\theta \\
+    &= \frac{1}{2\sqrt{\pi \omega}} \int_{-\infty}^{\infty} \begin{pmatrix} a & b e^{-i \theta} \\ ce^{i \theta} & d \end{pmatrix}  e^{-\theta^2/4\sigma} d\theta \\
+\end{align}
+For the diagonal term, 
+\begin{align}
+    \rho_{00}' = \frac{a }{2\sqrt{\pi \sigma}} \int_{-\infty}^{\infty} a e^{-\theta^2/4\sigma} = \frac{a}{2\sqrt{\pi \sigma}} \sqrt{4 \pi \sigma } = a 
+\end{align}
+For the off-diagonal term, using completing the square: 
+\begin{align}
+    (\theta + A)^2 = \theta ^2 + 2 A \theta + A^2
+\end{align}
+In this case, $A = 2 i \sigma$, therefore, 
+\begin{align}
+    (\theta + 2i\sigma)^2 &= \theta ^2 + 2 ( 2 i \sigma) \theta + ( 2 i \sigma)^2 \\
+    &= \theta^2 + 4 i \sigma \theta - 4\sigma^2
+\end{align}
+Therefore, 
+\begin{align}
+    \rho_{01}'  = \frac{b }{2\sqrt{\pi \sigma}} \int_{-\infty}^{\infty} b e^{-\frac{\theta^2}{4\sigma} - i \theta} =  \frac{b }{2\sqrt{\pi \sigma}} \int_{-\infty}^{\infty} b e^{\frac{-(\theta^2 + 4i\sigma\theta) }
+    {4\sigma}} = \int_{-\infty}^{\infty} b e^{ -\frac{(\theta -2 i\sigma)^2}{4\sigma} e^ {-\sigma}}  = \frac{b}{2\sqrt{\pi \sigma}} \sqrt{4\pi\sigma}e^{-\sigma} = b e^{-\sigma}  
+\end{align}
+Therefore, the matrix $\rho' = \mathcal{E}_{PD}(\rho)$ is given by
+\begin{equation}
+    \rho' = \begin{pmatrix} a & b e^{-\sigma} \\ ce^{-\sigma} & d \end{pmatrix} \\
+\end{equation}
+
+
+
+\newpage
+\subsection{Problem 2 - Phase damping and T2 decay}
+How is phase damping observed experimentally, as a physical process? Since phase damping causes loss of coherence, i.e. phase information in superposition states, it is natural to observe and quantify phase damping by creating a superposition state, letting phase damping occur, then un-creating the superposition. Such a sequence of steps is precisely the interferometer studied in the last problem set, now with phase damping between the two Hadamard gates:
+\begin{center}
+\begin{quantikz}
+\lstick{$\ket{\psi}$}         \qw & \gate{H} & \gate{\mathcal{E}_{PD}} & \gate{H} & \qw 
+\end{quantikz}
+\end{center}
+Let the input state be $\ket{\psi} = \ket{0}$, and let $\mathcal{E}_{PD}$ be the phase damping via random $\hat{z}$ rotations you just worked out above. The output density matrix $\rho''$ of this quantum interferometer circuit is:
+\begin{equation}
+    \rho' = H \mathcal{E}_{PD}(H\ketbra{\psi}H)H
+\end{equation}
+We expect the output state $\rho' = \mathcal{E}_{PD}(\rho)$ to look like
+\begin{itemize}
+    \item When $\sigma=0$, there will be no phase damping, and the output state will be $\ket{0}$
+    \item As $\sigma \rightarrow \infty$ the output $\rho' \rightarrow \ketbra{1}$.
+\end{itemize}
+We are given that $\ket{\psi} = 0$, therefore,
+\begin{equation}
+    \ketbra{\psi} = \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix}
+\end{equation}
+Calculating $H\ketbra{\psi}H$,
+\begin{align}
+    H\ketbra{\psi}H &= \frac{1}{2}\begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \begin{pmatrix}1 & 0 \\ 0 & 0\end{pmatrix} \begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \\
+    &= \frac{1}{2}\begin{pmatrix}1 & 0 \\ 1 & 0\end{pmatrix} \begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \\
+    H\ketbra{\psi}H &= \frac{1}{2} \begin{pmatrix}1 & 1 \\ 1 & 1\end{pmatrix}
+\end{align}
+From the previous problem we have that 
+\begin{equation}
+    \rho' = \begin{pmatrix} a & b e^{-\sigma} \\ ce^{-\sigma} & d \end{pmatrix} \\
+\end{equation}
+Therefore, 
+\begin{equation}
+    \mathcal{E}(H\ketbra{\psi}H) = \frac{1}{2}\begin{pmatrix} 1 & e^{-\sigma} \\ e^{-\sigma} & 1 \end{pmatrix}
+\end{equation}
+Then,
+\begin{align}
+    H \mathcal{E}(H\ketbra{\psi}H) H &= \frac{1}{4} \begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \begin{pmatrix} 1 & e^{-\sigma} \\ e^{-\sigma} & 1 \end{pmatrix} \begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \\
+    &= \frac{1}{4} \begin{pmatrix}1+e^{-\sigma} & 1+e^{-\sigma} \\ 1-e^{-\sigma} & -1+e^{-\sigma}\end{pmatrix} \begin{pmatrix}1 & 1 \\ 1 & -1\end{pmatrix} \\
+    &= \frac{1}{4} \begin{pmatrix}2+2e^{-\sigma} & 0 \\ 0 & 2-2e^{-\sigma}\end{pmatrix} \\
+    &= \frac{1}{2} \begin{pmatrix}1+e^{-\sigma} & 0 \\ 0 & 1-e^{-\sigma}\end{pmatrix}
+\end{align}
+
+
+\newpage
+\subsection{Problem 3 - Spin echo and T2}
+Real physical systems often have behavior that is correlated in time. Specifically, for example, phase damping at two times may have rotation angles which are correlated with each other, instead of being independent. Such correlations mean that there is less inherent randomness than if the damping were independent processes. \\
+
+Consider a scenario similar to before, where a single qubit interferometer is used to quantify phase coherence, but this time, let there be two random rotations applied, with angles $\theta_1$ and $\theta_2$. \\
+
+Each of these angles has a gaussian distribution with zero mean and variance $\sigma$, but now let them be correlated, such that the joint probability distribution for $\theta_1$ and $\theta_2$ is
+\begin{equation}
+    p(\theta_1, \theta_2) = \frac{1}{2\pi \sigma \sqrt{1-r^2}} \exp\left[-\frac{1}{2(1-r^2)\sigma} (\theta_1^2 + \theta_2^2 - 2r\theta_1\theta_2)\right]
+\end{equation}
+Here, $r$ parameterizes the strength of the correlation; when $r=0$, the two angles are uncorrelated with each other. And as $r \rightarrow 1$, they approach being perfectly correlated. Confirm for yourself that $p(\theta_1,\theta_2)$ is a proper probability distribution. \\
+
+When the phase rotation noise is correlated, its effects can be (partially) reversed by adding a spin echo pulse in middle of the noise process. This spin-echo pulse is just an $X$ gate. Because $X$ flips the $\ket{0}$ and $\ket{1}$ states of the qubit, it also reverses correlated rotations. Mathematically, this is because $XZX = -Z$.\\
+
+We can quantify this effect by analyzing this quantum interferometer circuit with spin echo pulses:
+\begin{center}
+    \begin{quantikz}
+        \lstick{$\ket{\psi}$} & \gate{H} & \gate{Z_{\theta_1}} & \gate{X} & \gate{Z_{\theta_2}} & \gate{X} & \gate{H} & 
+    \end{quantikz}
+\end{center}
+
+Note that we have included two $X$ gates to mathematically simplify the analysis; the second $X$ gate could be left out to give a simpler but fully equivalently effective circuit. \\
+
+Let the input qubit state be $\ket{\psi} = \ket{0}$, and let $\mathcal{E}_1$ and $\mathcal{E}_2$ be the channels obtained by averaging over $Z_{\theta_1}$ and $Z_{\theta_2}$, respectively, such that the final output state is then 
+\begin{align}
+    \rho' &= H X \mathcal{E}_2(X\mathcal{E}_1(H\ketbra{\psi}H X)X) XH \\
+    &= \int_{-\infty}^{\infty} \int_{-\infty}^{\infty}HXe^{i}
+\end{align}
+
+
+
+
+\newpage
+\subsection{Problem 4 - Getting started with stim}
+We want to write code that will define a procedure which returns True if the two provided PauliString objects commute, and False otherwise. 
+\begin{lstlisting}
+    def ps_commute(a:stim.PauliString, b:stim.PauliString) -> bool:
+    
+        # Write code using stim which reutrns True
+        # if a commutes with b, and False otherwise
+        return a.commutes(b)
+\end{lstlisting}
+
+
+
+\newpage
+\subsection{Problem 5 - Groups and generators}
+Recall that an $n$-qubit state $\ket{\psi}$ is stabilized by an operator $g$ if $g\ket{\psi} = \ket{\psi}$. \\
+We define a stabilizer
+\begin{equation}
+    \mathcal{S} = \{g \in G_n\,:\, g\ket{\psi} = \ket{\psi}\}
+\end{equation}
+where $G_n$ is the $n$-qubit Pauli group.\\
+
+Note that $\mathcal{S}$ is a group:
+\begin{itemize}
+    \item $I^{\otimes n} \ket{\psi} = \ket{\psi}$ is the identity element
+    \item $g$ has an inverse in $S$: namely $g^{-1} = g^{\dagger} = g$ 
+    \item Multiplication is associative
+    \item The set $\mathcal{S}$ is closed under multiplication: $(gg')\ket{\psi} = g\ket{\psi} = \ket{\psi}$
+\end{itemize}
+You can verify that if $\mathcal{S}$ stabilizes a non-trivial vector space, it must further hold that all elements of the stabilizer must commute with each other (so that states that share simultaneous eigenspaces) and that $-I \notin \mathcal{S}$. \\
+
+Stabilizers are one of the nose useful ways to describe states and transformations in quantum information. In this problem, we explore some basic properties of stabilizer sets which arise from the fact that a stabilizer is an Abelian group (commutative group). \\
+
+You are given that 
+\begin{equation}
+    \mathcal{S} = \{XXIZ, YXIY,IZIX,ZZII,-YYIZ,XYIY,ZIIX,IIII\}
+\end{equation}
+Give the shortest possible elements which can be combined by multiplication to produce all of the elements in $S$. We say such a list is a set of \textit{generators} of $\mathcal{S}$. \\
+
+We are given that $\dim{S} = 8$, therefore, the minimum amount of generators is $8=2^m \rightarrow m=3$ independent generators. Let 
+\begin{equation}
+    S = \langle ZZII, IZIX, XXIZ\rangle
+\end{equation}
+where
+\begin{align}
+    g_1 &= ZZII \\
+    g_2 &= IZIX \\
+    g_3 &= XXIZ 
+\end{align}
+Then,
+\begin{align}
+    I &\in S \\
+    g_1g_2 &= (ZZII)(IZIX) = ZIIX \in S\\
+    g_1g_3 &= (ZZII)(XXIZ) = (-i*-i)(YYIZ) = -YYIZ \in S \\ 
+    g_2g_3 &= (IZIX)(XXIZ) = (-i*i)(XYIY) = XYIY \in S \\ 
+    g_1g_2g_3 &= (ZZII)(IZIX)(XXIZ) = (ZIIX)(XXIZ) = (i*-i)(YXIY) = YXIY
+\end{align}
+Therefore, 
+\begin{equation}
+    S = \langle ZZII, IZIX, XXIZ\rangle
+\end{equation}
+
+
+
+\newpage
+\subsection{Problem 6 - Groups and generators II}
+Given that $\{XIX,ZIY\}$ generate $\mathcal{S}$. Give a list of additional operators which are also in $\mathcal{S}$. \\
+Using 
+\begin{equation}
+    XZ = -iY \text{ and } XY = iZ
+\end{equation}
+Then we have, 
+\begin{equation}
+    (XIX)(ZIY) = (-i^2)YIZ = YIZ
+\end{equation}
+We also need identity, therefore, the additional operators are $\{III,YIZ\}$
+
+
+
+\newpage
+\subsection{Problem 7 - Elementary stabilizers}
+Stabilizers are one of the most useful ways to describe states and transformations in quantum information. In this problem, we explore some descriptions of basic stabilizer states. \\
+
+Recall that if an $n$-qubit state $\ket{\psi}$ is stabilized by $S = \langle g_1, g_2, \ldots, g_n\rangle$, then $g\ket{\psi} = \ket{\psi}$ for all $g \in \mathcal{S}$. Note that $g_1, g_2, \ldots, g_n$ are the \textit{generators} of $\mathcal{S}$. \\
+
+We will give stabilizer generator sets for the following states (normalizations suppressed). 
+We will use the following
+\begin{align}
+    Z\ket{0} &= \ket{0}\\
+    Z\ket{1} &= -\ket{1}\\
+    X\ket{0} &= \ket{1}\\
+    X\ket{1} &= \ket{0}
+\end{align}
+
+\begin{itemize}
+    \item $\ket{0} + i\ket{1} \Rightarrow \boxed{S = \langle Y\rangle}$ 
+    \item $\ket{1} \Rightarrow \boxed{S = \langle -Z \rangle}$
+    \item $\ket{00} + \ket{11} \Rightarrow \boxed{S = \langle ZZ, XX\rangle}$
+    \item $\ket{00} - \ket{11} \Rightarrow \boxed{S = \langle ZZ, -XX\rangle}$
+    \item $\ket{000} + \ket{111} \Rightarrow \boxed{S = \langle XXX, ZZI, IZZ\rangle}$
+\end{itemize}
+
+
+
+\newpage
+\subsection{Problem 8 - Elementary stabilizers II}
+Given stabilizer generator sets for the following \textit{vector spaces}, specified by the basis sets given.
+\begin{align}
+    Z\ket{0} &= \ket{0}\\
+    Z\ket{1} &= -\ket{1}\\
+    X\ket{0} &= \ket{1}\\
+    X\ket{1} &= \ket{0}
+\end{align}
+\begin{itemize}
+    \item $\{\ket{001}, \ket{110}\} \Rightarrow \boxed{S = \langle ZZI, -ZIZ\rangle}$ \\
+    \textit{Check:}
+    \begin{align}
+        ZZI\ket{001} &= \ket{001} \\ 
+        -ZIZ\ket{001} &= \ket{001} \\ 
+        ZZI\ket{110} &= \ket{110}  \\
+        -ZIZ\ket{110} &= \ket{110}
+    \end{align}
+    \item $\{\ket{00} + \ket{11}, \ket{01} + \ket{10}\} \Rightarrow \boxed{S = \langle XX\rangle}$ \\
+    \textit{Check:}
+    \begin{align}
+        XX(\ket{00} + \ket{11}) &= \ket{11} + \ket{00}  = \ket{00} + \ket{11}\\ 
+        XX(\ket{01} + \ket{10}) &= \ket{10} + \ket{01}  = \ket{01} + \ket{10}
+    \end{align}
+    
+\end{itemize}
+
+
+
+\newpage
+\subsection{Problem 9 - Action of quantum gates on stabilizer states}
+Suppose $\ket{\psi}$ is stabilized by $\mathcal{S}$ such that $g\ket{\psi} = \ket{\psi}$ for all $g \in \mathcal{S}$. Then $\ket{\phi} = U\ket{\phi}$ is stabilized by $S' = USU^\dagger$, since
+\begin{equation}
+    UgU^\dagger \ket{\phi} = UgU^\dagger U \ket{\psi} = U \ket{\psi} = \ket{\phi}
+\end{equation}
+Thus we may often gain deep appreciation into the operation of a quantum circuit $U$ by studying how it transforms stabilizer sets (by conjugation), rather than how it transforms general quantum states (by multiplication). \\
+
+Consider the vector space $V = \{\ket{01} + \ket{10}, \ket{00} + \ket{11}\}$ stabilized by the generator set $\mathcal{S} = \langle XX \rangle$. We want to find the new stabilizer $S'$ resulting from operating on this two qubit vector space with the following unitary gates. 
+\begin{itemize}
+    \item $U = H^{\otimes 2} = H \otimes H$ 
+    \begin{align}
+        S' &= \langle(H \otimes H)(X \otimes X)(H^\dagger \otimes H^\dagger)\rangle \\
+        &= \langle (HXH)\otimes (HXH)\rangle \\
+        \Aboxed{S' &= \langle ZZ\rangle}
+    \end{align}
+    
+    \item $U = S^{\otimes 2} = S \otimes S$ 
+    \begin{align}
+        S' &= \langle(S \otimes S)(X \otimes X)(S^\dagger \otimes S^\dagger)\rangle \\
+        &= \langle (SXS^\dagger)\otimes (SXS^\dagger)\rangle \\
+        \Aboxed{S' &= \langle ZZ\rangle}
+    \end{align}
+    
+    \item $U = T^{\otimes 2} = T\otimes T$ 
+    \begin{align}
+        TXT^\dagger &= \begin{pmatrix} 1 & 0 \\ 0 & e^{i\pi/4} \end{pmatrix} \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} \begin{pmatrix} 1 & 0 \\ 0 & e^{-i\pi/4} \end{pmatrix} = \begin{pmatrix} 0 & 1 \\ e^{i\pi/4} & 0 \end{pmatrix}\begin{pmatrix} 1 & 0 \\ 0 & e^{-i\pi/4} \end{pmatrix} = \begin{pmatrix} 0 & e^{-i\pi/4} \\ e^{i\pi/4} & 0 \end{pmatrix} = \frac{1}{\sqrt{2}} \begin{pmatrix} 0 & 1-i \\ 1+i & 0 \end{pmatrix} \\
+        &= \frac{1}{\sqrt{2}}(X + Y)
+    \end{align}
+    Therefore, 
+    \begin{align}
+        S' &= \langle(T \otimes T)(X \otimes X)(T^\dagger \otimes T^\dagger)\rangle \\
+        &= \langle (TXT^\dagger)\otimes (TXT^\dagger)\rangle \\
+        &= \left\langle \left(\frac{1}{\sqrt{2}}(X + Y))\otimes (\frac{1}{\sqrt{2}}(X + Y)\right)\right\rangle \\
+        \Aboxed{S' &= \emptyset}
+    \end{align}
+    \item $U = Z^{\otimes 2} = Z\otimes Z$ 
+    \begin{align}
+        S' &= \langle(Z \otimes Z^\dagger)(X \otimes X)(Z^\dagger \otimes Z^\dagger)\rangle \\
+        &= \langle (ZXZ)\otimes (ZXZ)\rangle \\
+        \Aboxed{S' &= \langle XX\rangle}
+    \end{align}
+  
+    \item $U = CNOT = ((I+Z) \otimes I + (I-Z)\otimes X) / 2$ \\
+    Rewriting $CNOT$ by evaluating $I\pm Z$
+    \begin{equation}
+        \frac{I+Z}{2} = \ketbra{0} \qquad \frac{I-Z}{2} = \ketbra{1}
+    \end{equation}
+    Therefore CNOT can be written as 
+    \begin{equation}
+        U = \ketbra{0}\otimes I + \ketbra{1} \otimes X
+    \end{equation}
+    Then,
+    \begin{align}
+        CNOT\,(X \otimes X) \,CNOT &= (\ketbra{0}\otimes I + \ketbra{1} \otimes X)(X \otimes X)(\ketbra{0}\otimes I + \ketbra{1} \otimes X) \\
+        &= (\ketbra{0}\otimes I)(X \otimes X)(\ketbra{0}\otimes I) \notag \\
+        &\qquad + (\ketbra{0}\otimes I)(X \otimes X)(\ketbra{1}\otimes X) \notag \\
+        &\qquad + (\ketbra{1}\otimes X)(X \otimes X)(\ketbra{0}\otimes I) \notag \\
+        &\qquad + (\ketbra{1}\otimes X)(X \otimes X)(\ketbra{1}\otimes X) \\
+        &= \cancel{(\ketbra{0}\!X\!\ketbra{0})} \otimes (IXI) + (\ketbra{0}\!X\!\ketbra{1}) \otimes (IXX) \notag \\
+        &\qquad + (\ketbra{1}\!X\!\ketbra{0}) \otimes (XXI) + \cancel{(\ketbra{1}\!X\!\ketbra{1})} \otimes (XXX) \\
+        &=(\ketbra{0}{1}\otimes I) + (\ketbra{1}{0} \otimes I) \\
+        &=X \otimes I
+    \end{align}
+    Therefore, 
+    \begin{equation}
+        S' = \langle X \otimes I \rangle
+    \end{equation}
+\end{itemize}
+
+
+
+\newpage
+\subsection{Problem 10 - Action of quantum gates on stabilizer states II}
+Consider the vector space $V$ stabilized by $\mathcal{S} = \langle g_1, g_2, g_3 \rangle$ where
+\begin{align}
+    g_1 &= IIZZ \\
+    g_2 &= ZZII \\
+    g_2 &= XXXX
+\end{align}
+Give the new stabilizer $S'$ resulting from operating on this two qubit vector space with the following unitary gates
+
+\begin{itemize}
+    \item $U_1 = H^{\otimes 4}$ 
+    \begin{align}
+        U_1g_1U_1^\dagger &= (HHHH)(IIZZ)(HHHH) \\
+        &= (HIH)(HIH)(HZH)(HZH) \\
+        U_1g_1U_1^\dagger & = IIXX \\
+        &\notag \\
+        U_1g_2U_1^\dagger &= (HHHH)(ZZII)(HHHH) \\
+        &= (HZH)(HZH)(HIH)(HIH) \\
+        U_1g_2U_1^\dagger & = XXII \\
+        &\notag \\
+        U_1g_3U_1^\dagger &= (HHHH)(XXXX)(HHHH) \\
+        &= (HXH)(HXH)(HXH)(HXH) \\
+        U_1g_2U_1^\dagger & = ZZZZ 
+    \end{align}
+    Therefore,
+    \begin{equation}
+        \boxed{S' = \langle IIXX, XXII,ZZZZ \rangle}
+    \end{equation}
+    
+    \item $U_2 = S^{\otimes 4}$
+    \begin{align}
+        U_2g_1U_2^\dagger &= (SSSS)(IIZZ)(S^\dagger S^\dagger S^\dagger S^\dagger ) \\
+        &= (SIS^\dagger)(SIS^\dagger)(SZS^\dagger)(SZS^\dagger) \\
+        U_2g_1U_2^\dagger & = IIZZ \\
+        &\notag \\
+        U_2g_2U_2^\dagger &= (HHHH)(ZZII)(S^\dagger S^\dagger S^\dagger S^\dagger) \\
+        &= (SZS^\dagger)(SZS^\dagger)(SIS^\dagger)(SIS^\dagger) \\
+        U_2g_2U_2^\dagger & = ZZII \\
+        &\notag \\
+        U_2g_3U_2^\dagger &= (HHHH)(XXXX)(S^\dagger S^\dagger S^\dagger S^\dagger) \\
+        &= (SXS^\dagger)(SXS^\dagger)(SXS^\dagger)(SXS^\dagger) \\
+        U_1g_2U_1^\dagger & = YYYY 
+    \end{align}
+    Therefore,
+    \begin{equation}
+        \boxed{S' = \langle IIZZ, ZZII, YYYY \rangle}
+    \end{equation}
+    
+    \item $U_3 = Z^{\otimes 4}$
+    \begin{align}
+        U_3g_1U_3^\dagger &= (ZZZZ)(IIZZ)(ZZZZ) \\
+        &= (ZIZ)(ZIZ)(ZZZ)(ZZZ) \\
+        U_3g_1U_3^\dagger & = IIZZ \\
+        &\notag \\
+        U_3g_2U_3^\dagger &= (ZZZZ)(ZZII)(ZZZZ) \\
+        &= (ZZZ)(ZZZ)(ZIZ)(ZIZ) \\
+        U_3g_2U_3^\dagger & = ZZII \\
+        &\notag \\
+        U_3g_3U_3^\dagger &= (ZZZZ)(XXXX)(ZZZZ) \\
+        &= (ZXZ)(ZXZ)(ZXZ)(ZXZ) \\
+        U_3g_2U_3^\dagger & = XXXX 
+    \end{align}
+    Therefore,
+    \begin{equation}
+        \boxed{S' = \langle IIZZ, ZZII, XXXX \rangle}
+    \end{equation}
+\end{itemize}
+
+
+
+\newpage
+\subsection{Problem 11 - Action of quantum gates on stabilizer states III}
+Two stabilizer sets $\mathcal{S}$ and $\mathcal{S}'$ are equal if they contain the same stabilizer elements, i.e. if their generators generate the same sets. For the definitions of $U_1$, $U_2$, and $U_3$ and $\mathcal{S} = \langle g_1, g_2, g_3 \rangle$, are $\mathcal{S}$ and $\mathcal{S}?$ the same? \\
+From problem 10:
+\begin{align}
+    S &= \langle IIZZ, ZZII, XXXX \rangle \\
+    S_1' & = \langle IIXX, XXII,ZZZZ \rangle \\
+    S_2' & = \langle IIZZ, ZZII, YYYY \rangle \\
+    S_3' & =  \langle IIZZ, ZZII, XXXX \rangle
+\end{align}
+
+\begin{itemize}
+    \item $U_1SU_1^\dagger = S$? False, because 
+    \item $U_2SU_2^\dagger = S$? True, because the first two elements are in $S$. Then: 
+    \begin{equation}
+        (IIZZ)(ZZII)(YYYY) = (ZZZZ)(YYYY) = (-i)^4XXXX = XXXX
+    \end{equation}
+    \item $U_3SU_3^\dagger = S$? True, because the generators are exactly the same
+\end{itemize}
+
+
+
+\newpage
+\subsection{Problem 12 - Stabilizer description of quantum circuit transformations}
+Consider the following simple quantum circuit:
+\begin{center}
+    \begin{quantikz}
+        &\slice{$S_0$} & \gate{H} \slice{$S_1$} & \ctrl{1} \slice{$S_2$} & & \\
+        & & & \targ{} & &
+    \end{quantikz}
+\end{center}
+The input state is $\ket{00}$, which is stabilized by $S_0 = \langle IZ, ZI \rangle$. Give the stabilizers describing the state after the Hadamard and after the controlled-NOT gate (the top wire carries the first qubit). \\
+
+We can work this out by using the fact that $U$ acting on a state stabilized by $\mathcal{S}$ produces a state stabilized by $USU^\dagger$. \\
+
+You can also double-check yourself by working out the explicit quantum states produced in the circuit, and figuring out the stabilizers for each of the states. However, for circuits composed of Clifford group gates, namely circuits generated by $H$, $S$, and the controlled-NOT gate, it is much faster to work directly with the stabilizer. 
+
+
+\newpage
+\subsection{Problem 13 - 7-bit Hamming code syndrome and distance}
+Consider the classical $n=7$, $k=4$ code $C$ generated by
+\begin{equation}
+G=
+\begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & 1 & 0 & 0\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1\\
+0 & 1 & 1 & 1\\
+1 & 0 & 1 & 1\\
+1 & 1 & 0 & 1
+\end{pmatrix}
+\end{equation}
+which encodes sixteen seven-bit codewords. Let us use as the parity check matrix
+\begin{equation}
+H=
+\begin{pmatrix}
+0 & 0 & 0 & 1 & 1 & 1 & 1\\
+0 & 1 & 1 & 0 & 0 & 1 & 1\\
+1 & 0 & 1 & 0 & 1 & 0 & 1
+\end{pmatrix}
+\end{equation}
+
+Recall that for these binary matrices, addition is performed modulo two, and note that $HG=0$.
+
+\begin{enumerate}
+\item An error can be modeled as addition (modulo 2) of a random bit string $e$ to a codeword
+$x\in C$, giving $y=x+e$. As long as $y$ is not a codeword, the error can be detected by computing
+\begin{equation}
+Hy = He \neq 0.
+\end{equation}
+Thus, $Hy$ is called the \emph{error syndrome}.
+
+Give the error syndrome for the following bit strings. 
+\begin{itemize}
+    \item $y_0^{T} = \begin{pmatrix}0 & 1 & 1 & 1 & 1 & 0 & 0 \end{pmatrix}$: 
+    \begin{align}
+        H y_0^T &= \begin{pmatrix}
+        0 & 0 & 0 & 1 & 1 & 1 & 1\\
+        0 & 1 & 1 & 0 & 0 & 1 & 1\\
+        1 & 0 & 1 & 0 & 1 & 0 & 1\end{pmatrix} \begin{pmatrix}0 \\ 1 \\ 1 \\ 1 \\ 1 \\ 0 \\ 0 \end{pmatrix} \\
+        H y_0^T &= \begin{pmatrix} 0 & 0 & 0 \end{pmatrix}^T
+    \end{align}
+
+    \item $y_1^T = \begin{pmatrix} 1 & 1 & 1 & 1 & 1 & 0 & 0 \end{pmatrix}$:
+    \begin{align}
+        H y_0^T &= \begin{pmatrix}
+        0 & 0 & 0 & 1 & 1 & 1 & 1\\
+        0 & 1 & 1 & 0 & 0 & 1 & 1\\
+        1 & 0 & 1 & 0 & 1 & 0 & 1\end{pmatrix} \begin{pmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 0 \\ 0\end{pmatrix} \\
+        H y_1^T &= \begin{pmatrix} 0 & 0 & 1 \end{pmatrix}^T
+    \end{align}
+
+    \item $y_1^T = \begin{pmatrix} 0 & 1 & 0 & 1 & 1 & 0 & 0 \end{pmatrix}$
+    \begin{align}
+        H y_0^T &= \begin{pmatrix}
+        0 & 0 & 0 & 1 & 1 & 1 & 1\\
+        0 & 1 & 1 & 0 & 0 & 1 & 1\\
+        1 & 0 & 1 & 0 & 1 & 0 & 1\end{pmatrix} \begin{pmatrix} 0 \\ 1 \\ 0 \\ 1 \\ 1 \\ 0 \\ 0\end{pmatrix} \\
+        H y_2^T &= \begin{pmatrix} 0 & 1 & 1 \end{pmatrix}^T
+    \end{align}
+\end{itemize}
+
+\item The maximum number of bit flip errors that can be tolerated is determined by the minimum Hamming distance between any two codewords, 
+\begin{equation}
+    d(C) = \min_{x,y \in C, x \neq y} d(x,y)
+\end{equation}
+where $d(x,y)$ is the number of bits where $x$ and $y$ differ. We want to calculate $d(C)$ for the above code.\\
+We know that if code has distance $d$, then $H$ has at least $d$ linearly independent columns. We don't have $d(c) = 1$ because no matter where you put a $1$ in the $y^T$, the result will never be 0. We also don't have $d(c) = 2$ for the same reason, there will always be a $1$ when calculating $H_y^T$. Let $y^T = \begin{pmatrix}1 & 1 & 1 & 0 & 0 & 0 & 0\end{pmatrix}^T$. Then $Hy^T=0$. 
+
+\begin{center}
+$d(C)=3$ for the above code 
+\end{center}
+\end{enumerate}
+
+
+
+\newpage
+\subsection{Problem 14 - Dual classical code}
+onsider the classical $n=7$, $k=4$ code $C$ generated by
+\begin{equation}
+G=
+\begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & 1 & 0 & 0\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1\\
+0 & 1 & 1 & 1\\
+1 & 0 & 1 & 1\\
+1 & 1 & 0 & 1
+\end{pmatrix}
+\end{equation}
+which encodes sixteen seven-bit codewords. Let us use as the parity check matrix
+\begin{equation}
+H=
+\begin{pmatrix}
+0 & 0 & 0 & 1 & 1 & 1 & 1\\
+0 & 1 & 1 & 0 & 0 & 1 & 1\\
+1 & 0 & 1 & 0 & 1 & 0 & 1
+\end{pmatrix}
+\end{equation}
+
+Recall that for these binary matrices, addition is performed modulo two, and note that $HG=0$.\\
+
+Define a new code $C^\perp$ which has generator matrix $G' = H^T$ and parity check matrix $H'= G^T$. This code is known as the dual of $C$. Recall that $n$ is the number of bits each codeword has, and $k$ is the number of bits which can be encoded by the codewords, i.e. $k = \log_2(\text{number of codewords}) $. \\
+
+Here,
+\begin{equation}
+    G' = H^T = \begin{pmatrix}
+        0 & 0 & 1 \\ 
+        0 & 1 & 0 \\
+        0 & 1 & 1 \\ 
+        1 & 0 & 0 \\
+        1 & 0 & 1 \\
+        1 & 1 & 0 \\
+        1 & 1 & 1 
+    \end{pmatrix}
+\end{equation}
+and 
+\begin{equation}
+    H' = G^T = \begin{pmatrix}
+        1 & 0 & 0 & 0 & 0 & 1 & 1 \\
+        0 & 1 & 0 & 0 & 1 & 0 & 0 \\
+        0 & 0 & 1 & 0 & 1 & 1 & 0 \\
+        0 & 0 & 0 & 1 & 1 & 1 & 1
+    \end{pmatrix}
+\end{equation}
+
+\begin{itemize}
+    \item A code's $n$ is the length of each codeword. The dual code $C^\perp$ has generator matrix $G' = H^T$, which has dimensions $7 \times 3$. A generator matrix with 7 rows produces codewords with 7 bits. 
+        
+    Therefore, for $C^\perp$, $n = 7$. 
+    \item $k$ is the number of information bits, i.e. the dimension of the code, which equals the rank of the generator matrix. The rank of $G'=H^T = 3$ therefore, $k=3$. 
+    \item We want to know if all code words of $C^\perp$ codewords of $C$. The codewords of $C$ are given by 
+    \begin{align}
+        h_1 &= \begin{pmatrix}0 & 0 & 0 & 1 & 1 & 1 & 1 \end{pmatrix}^T\\
+        h_2 &= \begin{pmatrix}0 & 1 & 1 & 0 & 0 & 1 & 1 \end{pmatrix}^T \\
+        h_3 &= \begin{pmatrix}1 & 0 & 1 & 0 & 1 & 0 & 1 \end{pmatrix}^T 
+    \end{align}
+    The codewords of $C^\perp$ are given by
+    \begin{align}
+        g_1 &= \begin{pmatrix}1 & 0 & 0 & 0 & 0 & 1 & 1 \end{pmatrix}^T\\
+        g_2 &= \begin{pmatrix}0 & 1 & 0 & 0 & 1 & 0 & 1 \end{pmatrix}^T \\
+        g_3 &= \begin{pmatrix}0 & 0 & 1 & 0 & 1 & 1 & 0 \end{pmatrix}^T \\
+        g_4 &= \begin{pmatrix}0 & 0 & 0 & 1 & 1 & 0 & 1 \end{pmatrix}^T 
+    \end{align}
+    We can see that $h_1 = g_4 = G(0,0,0,1)^T$, $h_2 = g_2 + g_3 = G(0,1,1,0)^T$, and $h_3 = g_1 + g_3 = G(1,0,1,0)^T$. Therefore, all codewords of $C^\perp$ codewords of $C$.
+    
+\end{itemize}
