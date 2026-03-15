@@ -4,9 +4,34 @@ In Quantum Signal Processing (QSP), we transform a given $x$-rotation "signal op
 
 \subsubsection{Quantum circuit for BB1 as QSP}
 This is the BB1 pulse sequence, expressed as a QSP quantum circuit (with time going from left to right, as usual):
+\begin{quantikz}[row sep={0.8cm,between origins}, wire types={q,n}]
+& \gate{U_x}
+& \gate{e^{-i\phi Z}}
+& \gate{U_x}
+& \gate{e^{2i\phi Z}}
+& \gate{U_x}
+& \gate{e^{i0 Z}}
+& \gate{U_x}
+& \gate{e^{-2i\phi Z}}
+& \gate{U_x}
+& \gate{e^{i\phi Z}}
+& \qw \\
+& \push{Unknown}
+& \push{known}
+& \push{Unknown}
+& \push{known}
+& \push{Unknown}
+& \push{known}
+& \push{Unknown}
+& \push{known}
+& \push{Unknown}
+& \push{known}
+&
+\end{quantikz}\\
 
+where $U_x = R_x(\theta)$ and $R_z(\phi) = e^{-i\phi Z / 2}$. Note that $\theta$ is generally unknown, whereas all the $\phi_k$ are known. 
 
-Implementing this single-qubit quantum circuit in pytket:
+Implement this single-qubit quantum circuit in pytket:
 \begin{lstlisting}
     import pytket
     import numpy as np
@@ -49,36 +74,6 @@ such that
 \end{itemize}
 
 
-\begin{align}
-    U = R_x(\theta) = & e^{-i\theta X / 2} \\
-    &=\cos\frac{\theta}{2} I - i\sin\frac{\theta}{2}X \\
-    &=\begin{pmatrix}
-        \cos\frac{\theta}{2} & 0 \\ 0 & \cos\frac{\theta}{2} 
-    \end{pmatrix} + \begin{pmatrix}
-        0& - i\sin\frac{\theta}{2} \\
-        - i\sin\frac{\theta}{2} & 0
-    \end{pmatrix} \\
-    &= \begin{pmatrix}
-        \cos\frac{\theta}{2} & - i\sin\frac{\theta}{2} \\
-        - i\sin\frac{\theta}{2} & \cos\frac{\theta}{2}
-    \end{pmatrix}
-\end{align}
-
-\begin{align}
-    R_z(\phi) = & e^{-i\phi Z / 2} \\
-    &=\cos\frac{\phi}{2} I - i\sin\frac{\phi}{2}Z \\
-    &=\begin{pmatrix}
-        \cos\frac{\phi}{2} & 0 \\ 0 & \cos\frac{\phi}{2} 
-    \end{pmatrix} + \begin{pmatrix}
-        - i\sin\frac{\phi}{2} & 0  \\
-        0 & i\sin\frac{\phi}{2}
-    \end{pmatrix} \\
-    &= \begin{pmatrix}
-        e^{-i\phi/2}& 0 \\
-        0 & e^{i\phi/2}
-    \end{pmatrix}
-\end{align}
-
 Using the code below to evaluate $p(\theta) = \braket{0|U|0}$,
 \begin{lstlisting}
     from pytket.utils.symbolic import circuit_to_symbolic_unitary
@@ -97,12 +92,17 @@ Using the code below to evaluate $p(\theta) = \braket{0|U|0}$,
     chop_small(p.series(theta,0, 8).evalf(chop=True))
 \end{lstlisting}
 
-From the code above, the output is:
-\begin{align}
-    &((1.875 + 0.484122918275927i)*\sin(0.159154943091896\pi\theta)^4 + \cos(0.159154943091896\pi\theta)^4 - 0.3125\cos(0.636619772367582\pi\theta) + 0.3125)*\cos(0.159154943091896\pi\theta) \\
-    &1.0 + 0.0302576823922455i\theta^4 + \theta^6(−0.00488281250000001 - 0.00882515736440497i) + O(\theta^8)
-\end{align}
-
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+    From the code above, the output is:
+    \begin{align}
+        &((1.875 + 0.484122918275927i)*\sin(0.159154943091896\pi\theta)^4 + \cos(0.159154943091896\pi\theta)^4 \notag \\ 
+        & \quad - 0.3125\cos(0.636619772367582\pi\theta) + 0.3125)*\cos(0.159154943091896\pi\theta) \\
+        & = 1.0 + 0.0302576823922455i\theta^4 + \theta^6(-0.00488281250000001 - 0.00882515736440497i) + O(\theta^8)
+    \end{align}
+    Therefore $k = 4$ and $c = 0.0302576823922455$
+    }%
+}
 \newpage
 \subsection{Problem 2 - The Quantum Fourier Transform (QFT)}
 This problem explores the structure of the Quantum Fourier Transform (QFT) and how it can be used to perform state preparation and phase manipulations. You will analyze the effect of applying phase shifts in the Fourier basis.
@@ -120,26 +120,32 @@ Consider a 2-qubit system ($N=4$). We apply the QFT to the state $\ket{1}$ (whic
 
 After apply $\mathrm{QFT}_4$ to the state $\ket{1}$, the result state is $\frac{1}{2} \sum_{k=0}^3 \alpha_k \ket{k}$. What is the value of the coefficient $\alpha_2$? 
 
-\begin{align}
-    \mathrm{QFT}_4 \ket{1} &= \frac{1}{2} \sum_{k=0}^3 \alpha_k \ket{k} \\
-    &=  \frac{1}{\sqrt{N}} \sum_{k=0}^{N-1}\omega_N^{jk}\ket{k} \\
-    &= \frac{1}{2} \left[e^{2\pi i 1\cdot 0/4}\ket{0} + e^{2\pi i 1\cdot 1/4}\ket{1} + e^{2\pi i 1\cdot 2/4}\ket{2} + e^{2\pi i 1\cdot 3/4}\ket{3}\right]
-\end{align}
-From here we can read off the coefficient $\alpha_2 =  e^{2\pi i 1\cdot 2/4} = e^{i \pi} = -1$. 
-
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            \mathrm{QFT}_4 \ket{1} &= \frac{1}{2} \sum_{k=0}^3 \alpha_k \ket{k} \\
+            &=  \frac{1}{\sqrt{N}} \sum_{k=0}^{N-1}\omega_N^{jk}\ket{k} \\
+            &= \frac{1}{2} \left[e^{2\pi i 1\cdot 0/4}\ket{0} + e^{2\pi i 1\cdot 1/4}\ket{1} + e^{2\pi i 1\cdot 2/4}\ket{2} + e^{2\pi i 1\cdot 3/4}\ket{3}\right]
+        \end{align}
+        From here we can read off the coefficient $\alpha_2 =  e^{2\pi i 1\cdot 2/4} = e^{i \pi} = -1$. 
+    }%
+}
 \subsubsection{Visualizing the Phase}
 The QFT can be viewed as "encoding" the value $j$ into the phases of a uniform superposition. \\
 
 If we apply the QFT to a basis state $\ket{j}$ and get some state $\sum_k c_k\ket{k}$, what is the relative phase between $c_k$ and $c_{k+1}$, namely $\Delta = c_{k+1}^*c_k$? 
 
-\begin{align}
-    \Delta &= c_{k+1}^*c_k \\
-    &= \frac{1}{\sqrt{N}} (e^{2\pi i j(k+1)/N})^*\frac{1}{\sqrt{N}}(e^{2\pi i j k/N}) \\
-    &= \frac{1}{N}(e^{- 2\pi i j(k+1)/N})(e^{2\pi i j k/N}) \\
-    &= \frac{1}{N}\exp[2\pi i j/N (-k-1 + k)] \\
-    &= \frac{1}{N}\exp[-2\pi i j/N]
-\end{align}
-
+\noindent\fbox{%
+    \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            \Delta &= c_{k+1}^*c_k \\
+            &= \frac{1}{\sqrt{N}} (e^{2\pi i j(k+1)/N})^*\frac{1}{\sqrt{N}}(e^{2\pi i j k/N}) \\
+            &= \frac{1}{N}(e^{- 2\pi i j(k+1)/N})(e^{2\pi i j k/N}) \\
+            &= \frac{1}{N}\exp[2\pi i j/N (-k-1 + k)] \\
+            &= \frac{1}{N}\exp[-2\pi i j/N]
+        \end{align}
+    }%
+}
 
 
 
@@ -151,13 +157,16 @@ Suppose $N=8$, ($3$ qubits). We have a state that is a uniform superposition of 
 \begin{equation}
     \ket{\psi} = \frac{1}{2} (\ket{0} + \ket{2} + \ket{4} + \ket{6})
 \end{equation}
-This state has a period $T = 2$. If we apply $\mathrm{QFT}_8$ to the state $\ket{\psi}$ defined above, we want to know which states will have non-zero probability of being measured.
+
+This state has a period $T = 2$. If we apply $\mathrm{QFT}_8$ to the state $\ket{\psi}$ defined above,which basis states will have non-zero probability of being measured? \\
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 The QFT is defined as 
 \begin{equation}
     \mathrm{QFT}_N \ket{j} = \frac{1}{\sqrt{N}} \sum_{k=0}^{N-1}\omega_N^{jk}\ket{k}
 \end{equation}
 where $\omega_N = e^{2\pi i/N}$ is the $N$-th root of unity.
-
 
 \begin{align}
     \mathrm{QFT}_8 \ket{\psi} &=\mathrm{QFT}_8\left[\frac{1}{2} (\ket{0} + \ket{2} + \ket{4} + \ket{6})\right] \\
@@ -177,16 +186,20 @@ We want to know which states will have non-zero probability of being measured. I
     \norm{\braket{\psi|\mathrm{QFT}_8^\dagger \mathrm{QFT}_8| \psi}}^2
 \end{equation}
 we can only see that the $\ket{0}$ and $\ket{4}$ terms survive. 
-
+}%
+}
 
 \subsubsection{Constructive Interference}
 The reason we only see certain values is due to constructive interference. For a state with period $T$, the QFT concentrates the amplitude on multiples of $N/T$.\\
 
-Suppose $N = 1024$ and we have a periodic state with period $T=16$. If we measure the state after a QFT, what is the smallest non-zero integer is given by 
-
+Suppose $N = 1024$ and we have a periodic state with period $T=16$. If we measure the state after a QFT, what is the smallest non-zero integer we are likely to observe? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{equation}
     \frac{N}{T} = \frac{1024}{16} = 64
 \end{equation}
+}%
+}
 
 \subsubsection{Phase Rotations in the Fourier Basis}
 Consider the following operation sequence $U$:
@@ -195,8 +208,10 @@ Consider the following operation sequence $U$:
     \item Apply a phase gate $\exp(2\pi i \alpha Z)$ to each qubit
     \item Apply $\mathrm{QFT}^\dagger_N$.
 \end{enumerate}
-If we apply $U$ to the state $\ket{x}$, we want to find the resulting state $\ket{v} = U\ket{x}$. \\
+If we apply $U$ to the state $\ket{x}$, what is the resulting state $\ket{v} = U\ket{x}$. \\
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 The following operation can be described as the following
 \begin{equation}
     U = \mathrm{QFT}_N^\dagger e^{2\pi i \alpha Z}\mathrm{QFT}_N 
@@ -229,11 +244,15 @@ Then the resulting state $\ket{v}$ is
     &= \mathrm{QFT}_N^\dagger \mathrm{QFT}_N \ket{x + \alpha N} \\
     &= \ket{x + \alpha N} \\
 \end{align}
-
+}%
+}
 
 \newpage
 \subsection{Problem 3 - Jevons' constant}
-Using sympy to find the factors of 8616460799,
+In 1874, the English economist William Stanley Jevons wrote in his work Principles of Science:\\
+Can the reader say what two numbers multiplied together will produce the number 8,616,460,799? I think it unlikely that anyone but myself will ever know.\\
+
+Use sympy to find the factors of this number.
 \begin{lstlisting}
     import sympy
 
@@ -252,14 +271,41 @@ Using sympy to find the factors of 8616460799,
 \subsection{Problem 4 - Factoring larger integers}
 We will need to go a lot bigger than Jevons' number if we want factoring to be hard. It turns out making $N$ bigger is necessary, but not sufficient, for factoring to be hard! Indeed, certain special-purpose factoring algorithms make certain numbers surprisingly easy to factor. \\
 
-Note that
+Play around with the following code using the accompanying colab notebook to get a sense of what makes a number easy or hard to factor. Note that sympy tries several different factoring algorithms under the hood, in order to exploit different properties that might make a number easy to factor.\\ 
+
+\begin{lstlisting}
+    def generate_composite(factor_bit_lengths):
+    	"""
+    	Generate a random composite number N, whose factors have the bit lengths
+    	given in the list factor_bit_lengths.
+    	"""
+    	rtn = 1
+    	for nbits in factor_bit_lengths:
+    		rtn *= sympy.randprime(2**(nbits-1), 2**nbits)
+    	return rtn
+      
+    N = generate_composite([64, 64])
+    factor(N)
+\end{lstlisting}
+
+Answer the this multiple-choice question with the understanding that:
 \begin{itemize}
     \item ``Completely factor" means find \textit{all} prime factors
     \item  a ``$k$-bit number" $x$ means $2^{k-1}\leq x < 2^k$
     \item For the purposes of this question, ``quickly" means ``can be completed on a laptop in under a minute". In the question below, none of the options are ``borderline"; they are either much cheaper than 1 minute on a laptop, or much more expensive.
 \end{itemize}
 
-We want to check whether or not the follow statement is true: ``A number $N$ can typically be completely factored quickly if, 
+Note: sympy's factoring function with default settings will not quickly succeed on all of the "true" options below. Sometimes it gets "stuck" trying a factoring algorithm that is not appropriate for the given number. Here are some things to look at for the trickier ones:
+\begin{itemize}
+    \item Sympy's documentation of the elliptic curve method
+    \item Fermat's factorization method (see in particular the paragraph at the end of the "basic method" section)
+    \item Sympy's integernthroot function
+\end{itemize}
+
+
+Mark the completions that make the following statement true: ``A number $N$ can typically be completely factored quickly if, \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{itemize}
     \item it has two independently random 1024-bit prime factors - FALSE
     \item it has 64 independently random 32-bit prime factors - TRUE (? but I let this run for 15 minutes on my Colab)
@@ -270,12 +316,14 @@ We want to check whether or not the follow statement is true: ``A number $N$ can
     \item it is a random 2048-bit integer - FALSE
     \item it is a 2048-bit prime (i.e. can it be shown to be prime itself?) - TRUE
 \end{itemize}
+}%
+}
 
 \newpage
 \subsection{Problem 5 - Factoring via greatest common divisor (GCD)}
 The following two 2048-bit integers are of the form $N=pq$ and $M=p'q$, where $p,p',q$ are independently chosen random 1024-bit prime numbers. That is, they each have two factors, but share exactly one of those factors. \\
 
-We want to completely factor both of the integers:
+Completely factor both of the following integers:
 \begin{align}
     N &= 159561411736037650842019124481796807324653887498957019629693014541934972183567204227090048408510 \notag \\
     &0594623667305823548069239886835926577827307963162794252537977761232853616531034623384624193949447948 \notag \\
@@ -310,6 +358,17 @@ We want to completely factor both of the integers:
     assert(q2 * p == M)
 \end{lstlisting}
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+1434479188310610121491452576747852241279360893200798140186898204494123419282799437437880665917483
+2788856336366905219768190021301778280400637439599169562422453076700890524978061539130492082832709
+2665394992044261829429798263455243699549745801990350836742392901838631978262884860079993111405104
+624378572690015873
+}%
+}\\
+
+This can actually be a serious problem in computer security: if you use a faulty random number generator to generate the primes $p$ and $q$  for cryptographic purposes, it might turn out that one of them is not particularly random at all. If you can find two cryptographic keys $M$ and $N$ that share exactly one factor, you can break both of them! See for example: Heninger et al., ``Mining Your Ps and Qs: Detection of Widespread Weak Keys in Network Devices".
+
 
 \newpage
 \subsection{A quantum algorithm for discrete logarithms}
@@ -327,8 +386,10 @@ In quantum computing, Shor's algorithm for discrete logarithms relies on the fac
 Consider the group $\mathbb{Z}^*_{23}$ (integers modulo 23 under multiplication). Let $g=2$ be a generator for a subgroup.
 
 \subsubsection{Group Order}
-First, we want to determine the order $p$ of the subgroup generated by $g$. We want the find the smallest integer $p > 0$ such that $g^p \equiv 1\mod{23}$
+First, we want to determine the order $p$ of the subgroup generated by $g$. Find the smallest integer $p > 0$ such that $g^p \equiv 1\mod{23}$
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{align}
     2^1 &= 2 \\
     2^2 &= 4 \\
@@ -343,11 +404,17 @@ First, we want to determine the order $p$ of the subgroup generated by $g$. We w
     2^{11} &= 2048-(89\cdot23) = 1 \\
 \end{align}
 Therefore, the smallest integer $p>0$ such that $g^p \equiv 1\mod{23}$ is $p=11$.
-
+}%
+}
 
 \subsubsection{The Discrete Logarithm}
-Now, suppose we are given the value $w=18$. Because $p$ is prime, we are guaranteed that $w$ exists within the subgroup $\langle g\rangle$. \\
+Now, suppose we are given the value $w=18$. Because $p$ is prime, we are guaranteed that $w$ exists within the subgroup $\langle g\rangle$. Find the discrete logarithm $s$ such that $g^p \pmod 1 \mod 23$\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 From the previous question we saw that $2^6 = 64 -(2\cdot23) = 18$, therefore, $s=6$
+}%
+}
+
 
 \subsubsection{A periodic function for discrete log: numerical example}
 Consider the function
@@ -355,18 +422,26 @@ Consider the function
     f(x,y) = g^x \cdot w^{-y} \mod{23}
 \end{equation}
 and note that the modular inverse $18^{-1} \mod{23}=9$\\
-We want to compute $f(1,1)$,
+Compute the value of $f(1,1)$\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{align}
     f(1,1) &= 2^1\cdot 18^{-1} \mod 23 \\
     &=2 \cdot 9 \mod 23 \\
     &= 18 \mod 23
 \end{align}
-Now we want to compute the value of $f(1+s,2)$, where $s = 6$.\\
+}%
+} \\\\
+Compute the value of $f(1+s,2)$ using the $s$ you found above\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{align}
     f(1+6,2) &= 2^7\cdot 18^{-1}\cdot 18^{-1} \mod 23 \\
     &=13 \cdot 81 \mod 23 \\
     &= 18 \mod 23
 \end{align}
+}%
+} 
 
 \newpage
 \subsection{Quantum period finding for the discrete logarithm problem}
@@ -377,16 +452,23 @@ For the purposes of this problem, let's assume that $g$ generates a prime-order 
 
 To factor an integer $N$, we perform period finding on the function $f(x) = a^x \mod N$, and this gives us the order of the group generated by $a$. It might feel intuitive that for discrete log we should try finding the order of $f(x) = w^x \mod M$. Would this help us find $s$ such that $w = g^s \mod M$?  \\
 
-We want to find the period of the function $f(x) = w^x \mod M$. \\
+Let's approach this systematically. First, what is the period of the function $f(x) = w^x \mod M$. \\
 
-The period of the function $f(x) = w^x \mod M$ is the order, and we were given $M, g,$ and a prime $p$ for which $g^p \equiv 1 \mod M$. Therefore, the period is $\boxed{p}$. \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+The period of the function $f(x) = w^x \mod M$ is the order, and we were given $M, g,$ and a prime $p$ for which $g^p \equiv 1 \mod M$. Therefore, the period $= p$. 
+}%
+} \\\\
 
-Now, we want to find the period of the following function
+
+Well, that's not helpful: we already knew that! Let's try again. Consider the following function:
 \begin{equation}
     f(x_0,x_1) = g^{x_0}w^{x_1} \mod M
 \end{equation}
-Note this function has two inputs, so the period should be of the form $\vec{T} = (T_0,T_1)$. It should hold that $f(x_0',x_1') = f(x_0,x_1)$ if and only if there exists an integer $j$ such that $\vec{x}' = \vec{x} + j \vec{T} \mod p$. (with all arithmetic done $\mod p$). We want to find $T_0$ and $T_1$.
+Note this function has two inputs, so the period should be of the form $\vec{T} = (T_0,T_1)$. It should hold that $f(x_0',x_1') = f(x_0,x_1)$ if and only if there exists an integer $j$ such that $\vec{x}' = \vec{x} + j \vec{T} \mod p$. (with all arithmetic done $\mod p$). Give $T_0$ and $T_1$ in terms of the known variables in this problem.
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{align}
     f(x_0,x_1) &= g^{x_0}w^{x_1} \mod M \\
     &= g^{x_0} g^{sx_1} \mod M \\
@@ -405,7 +487,8 @@ and we must have that
     jT_0 + sjT_1 = 0
 \end{align}
 Therefore, we can choose $T_0 = -s$, and $T_1 = 1$.
-
+}%
+}
 
 \subsubsection{Dual lattice}
 In a moment we will go through all the machinery of writing down the quantum states at each step of period finding, taking their Fourier transforms, etc. But first we get to see the power of lattices, that allows us to skip all of that. \\
@@ -414,11 +497,15 @@ We learned in lecture that when we take the Fourier transform along each dimensi
 
 We want to find $\vec{y} = (y_0, y_1)$ of the new comb state after the QFT---or equivalently, a basis vector for the dual lattice---written in terms of $s$. Subjectively, this should be the "simplest" possible $\vec{y} = (y_0, y_1)$ such that $\vec{y} \cdot \vec{T} = 0 \mod p$. \\
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 From above, we saw that $T_0 = -s = p-s$, and $T_1 = 1$. We need 
 \begin{equation}
     \vec{y} \cdot \vec{T}  = y_0T_0 + y_1T_1= 0 \mod p
 \end{equation}
 From here the ``simplest possible $\vec{y} = (y_0,y_1) = (1,s)$
+}%
+}
 
 
 \subsubsection{Quantum period finding in 2D}
@@ -428,7 +515,7 @@ This suggests that if we go through with quantum period finding, the result we s
 \end{equation}
 As usual, the next step is to measure the ``output register, returning some group element $y$. \\
 
-We have have that $y = g^{x_0}w^{x_1}\mod M$. We want to write $y$ in terms of $g,s,x_0,x_1,M$. \\
+We have that $y = g^{x_0}w^{x_1}\mod M$. Write this in terms of only $g,s,x_0,x_1,M$. \\
 
 From above we have that $w = g^s \mod M$, so substituting into $y$ gives us
 \begin{align}
@@ -445,10 +532,13 @@ for some $c$ (for which $y = g^c$). If we now take the quantum Fourier transform
 \begin{equation}
     \sum_{y_0 =0}^{p-1}\sum_{y_1 =0}^{p-1}\sum_{x_0 =0}^{p-1} e^{2\pi i (c-sx_1)y_0/p}e^{2 \pi i x_1 y_1 / p} \ket{y_0} \ket{y_1} = \sum_{y_0,y_1} e^{2 \pi i c/p} \left[\sum_{x_1}e^{2\pi i (y_1 - sy_0)/p}\right] \ket{y_0}\ket{y_1}
 \end{equation}
-Now for the very important part. Let $a = y_1 - sy_0$, and consider the following question: For any non-zero integer $a$ such that $0 < a < p$, we want to find the value of
+Now for the very important part. Let $a = y_1 - sy_0$, and consider the following question: For any non-zero integer $a$ such that $0 < a < p$, what is the value of 
 \begin{equation}
     \sum_{x_1=0}^{p-1} e^{2\pi i x_1 a/ p}
 \end{equation}
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 Using geometric sum, 
 \begin{align}
     \sum_{x_1=0}^{p-1} e^{2\pi i x_1 a/ p} & = \frac{1 -e^{2 \pi i a \cdot p/p}}{1 - e^{ 2\pi i a/p}} \\ 
@@ -458,19 +548,25 @@ For any integer $0 < a < p$, $e^{2 \pi i a} = 1$, therefore,
 \begin{equation}
     \sum_{x_1=0}^{p-1} e^{2\pi i x_1 a/ p}  = 0
 \end{equation}
+}%
+}
+
 
 \subsubsection{The period!}
 This brings us to our big moment: given the above, the only values of $y_0$ and $y_1$ that will have nonzero probability of measurement are those for which $y_1 -sy_0 \equiv 0 \mod p$. \\
 
 If we now measure the registers holding $y_0$ and $y_1$, we are guaranteed to get values for which this relationship holds. Observe that such vectors are all integer multiples of the dual lattice basis vector we found above. \\
 
-Now for the grand finale: we want to solve for $s$ in terms of $y_0$ and $y_1$, using modular inverses if necessary (and assume this is 
+Now for the grand finale: solve for $s$ in terms of $y_0$ and $y_1$, using modular inverses if necessary (and assume this is 
 $\mod p$). \\
 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{equation}
     y_1 -sy_0 \equiv 0 \Rightarrow y_1 = sy_0 \Rightarrow s = (y_0)^{-1}y_1
 \end{equation}
-
+}%
+}
 
 
 
@@ -487,7 +583,7 @@ Suppose this is the following discrete logarithm problem over a multiplicative g
     &87434904633278008421545772254490936964505797156644220939497569164732185192675720179206113244515964966306 \notag \\
     &45374422190105536549936395638455664693560182656495650571179357625293599309221766299968467709714744663000
 \end{align}
-The goal is to find some $s$ such that $g^s \equiv w \mod M$. Suppose you run the algorithm described above on your quantum computer, and measure the following results: 
+Recall, your goal is to find some $s$ such that $g^s \equiv w \mod M$. Suppose you run the algorithm described above on your quantum computer, and measure the following results: 
 \begin{align}
     y_0 &= 897374748569185086389714192807682256550514976884135801112484108919210136525639372079954707785842370 \notag \\
     &15105668869413656454918335423184883171058484429026662448482971813243629924388023455828859083362628888148 \notag \\
@@ -499,26 +595,36 @@ The goal is to find some $s$ such that $g^s \equiv w \mod M$. Suppose you run th
     &65900631124344157646517713197844426347440589103000736208299198184913886573705
 \end{align}
 
+Given these values, compute $s$ such that $w = g^s \mod M$:
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 We need to calculate $s = (y_0)^{-1}y_1$. We first need to find the modular inverse of $y_0$.
 \begin{align}
-y_0^{-1}= &72500626049479460629106151733487205214100361162073684529569546401215661196 \\
-&39830230395008397483541712725094942291828189853231700326656581357397800732 \\
-&93948220972881037226508324548420428643185631174267405398570331041328946348 \\
-&09805750711806242732366924108836878280492317899301646114709571908750700461\\
+y_0^{-1}= &72500626049479460629106151733487205214100361162073684529569546401215661196 \notag\\
+&39830230395008397483541712725094942291828189853231700326656581357397800732 \notag\\
+&93948220972881037226508324548420428643185631174267405398570331041328946348 \notag\\
+&09805750711806242732366924108836878280492317899301646114709571908750700461 \notag\\
 &430115205007
 \end{align}
 Then,
 \begin{equation}
     s=y_0^{-1} y_1 \mod M = 33146632577570099237373573513513327566297498444842356751283756760092278878761
 \end{equation}
+}%
+} \\ \\
 
-Now we want to convert the integer $s$  into a 32-byte ASCII encoded string:\\
+Bonus question: convert the integer $s$ into a 32-byte ASCII encoded string: \\
 \begin{lstlisting}
     n = 33146632577570099237373573513513327566297498444842356751283756760092278878761
     print(n.to_bytes(32,'big').decode())
 \end{lstlisting}
 
-Under the hood explanation from ChatGPT:
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+Output of code: IHTFP (I hold the Fourier power). \\
+  
+Under the hood explanation from ChatGPT: \\
 First we convert the number 33146632577570099237373573513513327566297498444842356751283756760092278878761 to hexadecimal (base 16). This gives us 
 \begin{equation}
     494854465020284920686f6c642074686520466f757269657220706f77657229
@@ -587,7 +693,8 @@ Then we convert each byte to ASCII
 Therefore, the 32-byte ASCII encoded string is IHTFP (I hold the Fourier power). \\
 
 The process is integer $\rightarrow$ hexadecimal $\rightarrow$ split into bytes $\rightarrow$ convert to ASCII.
-
+}%
+} 
 
 \newpage
 \subsection{Factoring via discrete logarithm}
@@ -598,20 +705,31 @@ Recall that for an integer $N=pq$, the order of a multiplicative group $\mathbb{
 It turns out this lets us factor by picking some $a$, and then taking the discrete logarithm of $w = a^N \mod N = a^{N \mod (p-1)(q-1)} \mod N$, as follows.
 
 \subsubsection{Discrete log of $a^N \mod N$}
-We want to compute $d = N\mod (p-1)(q-1)$, expressing in terms of $p$ and $q$. We are given that $N=pq$ and $\phi = (p-1)(q-1) = pq - p-q+1= N - p-q+1$. 
+Compute $d = N\mod (p-1)(q-1)$, expressing in terms of $p$ and $q$. We are given that $N=pq$ and $\phi = (p-1)(q-1) = pq - p-q+1= N - p-q+1$. 
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 \begin{align}
     d &= N \mod (p-1)(q-1) \\
     &=N \mod (N-p-q+1)
 \end{align}
 From this we can see that the remainder is $p+q-1$. Therefore, $d = p+q-1$
+}%
+} 
 
 \subsubsection{Factors from discrete log}
 The answer $d$ to the previous question is what you would get from computing the discrete logarithm of $w$. (If you accidentally picked an $a$ that is part of an extremely small cyclic subgroup this could go wrong; that is so overwhelmingly unlikely we will ignore it). Solve for $p$ in your equation for $d$, then substitute that value for $p$ into the expression $N=pq$. This will give you a quadratic equation that you can solve for $q$, one of the factors! (Importantly, this quadratic equation is over regular integers, not integers $\mod N$). \\
 
-We want to solve for $q$ in terms of $d$ and $N$. We have that $d = p+q-1$, so solving for $p$, we get $p = d-q+1$. Substituting that back int $N = pq$, we get $N = (d-q+1)q = qd -q^2 + q \rightarrow q^2 -(d+1)q + N = 0$. Using the quadratic equation
+Write out the solution for $q$ in terms of $d$ and $N$, giving just the equation for the positive branch of the quadratic equation solution:
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+We have that $d = p+q-1$, so solving for $p$, we get $p = d-q+1$. Substituting that back int $N = pq$, we get $N = (d-q+1)q = qd -q^2 + q \rightarrow q^2 -(d+1)q + N = 0$. Using the quadratic equation
 \begin{align}
-    \frac{(d+1) \pm \sqrt{(d+1)^2 - 4N}}{2} &= \frac{(d+1) \pm \sqrt{(d^2 +2d + 1 - 4N}}{2}
+    \frac{(d+1) \pm \sqrt{(d+1)^2 - 4N}}{2} &= \frac{(d+1) \pm \sqrt{d^2 +2d + 1 - 4N}}{2}
 \end{align}
+}%
+} 
 
 \subsubsection{Factoring using discrete log: numerical example}
 We will look at a practical example: suppose you want to factor the following integer $N$, and by using a quantum computer you have gotten the following value of $d = \log_a w$ where $w = a^N \mod N$ (for some $a$ which doesn't matter).
@@ -622,8 +740,15 @@ We will look at a practical example: suppose you want to factor the following in
     d &= 1616378148705005598172588708624290522161484472831290537629284548522274745417485242937489689882589063 \notag \\
     &4896479391086825696470137541503752422998951381361243787
 \end{align}
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
 Using the formula in the previous part, we get that:
 \begin{align}
-    q&= 937155224897192155900900405043580252832357763998019996638689294025618151025084651172094223151735273601111 \notag \\
-    &0636796969679252829061493127659194825595209374471
+    q&= 937155224897192155900900405043580252832357763998019996638689294025618151025084651172094223151 \notag \\
+    &7352736011110636796969679252829061493127659194825595209374471
 \end{align}
+}%
+} 
+\\\\
+\textbf{Remark:} you may notice that above, $d$  is rather small --- about half the length of $N$. The fact that $d$ is so short has proven crucial for reducing the number of qubits needed for quantum factoring!

@@ -1,0 +1,885 @@
+\section{Problem Set 5 - 15 March 2026}
+\subsection{The Quantum Fourier Transform Circuit}
+This problem explores the circuit for the Quantum Fourier Transform (QFT). \\
+
+For $N = 2^n$, the QFT can be defined recursively. If we separate the input state $\ket{x_1x_2\ldots x_n}$ into the first bit and the remaining bits, the transformation can be expressed as:
+\begin{equation}
+    QFT_n\ket{x_1x_2\ldots x_n} = \frac{1}{\sqrt{2}}\left(\ket{0} + e^{2\pi i [0.x_1x_2\ldots x_n]}\ket{1} \otimes QFT_{n-1}\ket{x_2\ldots x_n}\right)
+\end{equation}
+ 
+In this recursive structure, the first qubit undergoes a Hadamard transform followed by a series of controlled phase shifts $R_k$, where each shift depends on the values of the subsequent qubits $x_2, \ldots, x_n$. Specifically, a rotation $R_k$ is applied to the first qubit, controlled by the $k$-th qubit. This structure repeats for each subsequent qubit.
+
+\subsubsection{QFT Circuit Implementation}
+The QFT circuit uses Hadamard gates ($H$) and controlled-phase rotations ($R_k$). The rotation gate is defined as
+\begin{equation}
+    R_k = \begin{pmatrix}
+        1 & 0 \\ 0 & e^{2\pi i/2^k}
+    \end{pmatrix}
+\end{equation}
+
+Which of the following statements about the QFT circuit are true? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+    \begin{itemize}
+        \item The circuit requires $O(n^2)$ gates for $n$ qubits. \textbf{TRUE}
+        \item The circuit naturally outputs the bits in reversed order (LSB to MSB). \textbf{TRUE}
+        \item A Hadamard gate is applied to every qubit exactly once. \textbf{TRUE}
+        \item The controlled-$R_k$ gates are performed after all the Hadamard operations. \textbf{FALSE} 
+    \end{itemize}
+    }%
+} 
+\newline \\ \\
+In cirq, the QFT is implemented by iterating through each qubit, applying a Hadamard, and then iterating through the remaining qubits to apply the conditional rotations. Note that the "distance" between the control and target qubits determines the power of the rotation. \\
+
+Complete the function below to return a Cirq circuit implementing an $n$-qubit QFT on the provided qubits. Do not include the final swap gates.
+
+
+\begin{lstlisting}
+import cirq
+import numpy as np
+
+def qft_no_swaps(nqubits):
+    circuit = cirq.Circuit()
+    qubits = cirq.LineQubit.range(nqubits)
+    for i in range(nqubits):
+        # Apply Hadamard to the current qubit
+        circuit.append(cirq.H(qubits[i]))
+        # Write your code here
+        for j in range(i + 1, nqubits):
+            exponent = 1 / (2 ** (j - i))
+            circuit.append(cirq.CZPowGate(exponent=exponent)(qubits[j], qubits[i]))
+    return circuit
+
+\end{lstlisting}
+
+
+\newpage
+\subsection{Spectral Analysis of the QFT Operator}
+The Quantum Fourier Transform (QFT) operator $\mathcal{F}$ acting on an $N$-dimensional Hilbert space is defined by its matrix elements $F_{jk} = \frac{1}{\sqrt{N}}\omega^{jk}$, where $\omega = e^{2\pi i /N}$.
+
+\subsubsection{The Characteristic Equation}
+Let $N=4$. What is the state $\ket{\psi} = \mathcal{F}^2 \ket{3}$. \\
+
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+    Calculating $\mathcal{F}^2$,
+    \begin{equation}
+        (\mathcal{F}^2)_{jk} = \sum_{l=0}^{N-1} \left(\frac{1}{\sqrt{N}} \omega^{jl}\right) \left(\frac{1}{\sqrt{N}} \omega^{lk}\right) = \frac{1}{N}\sum_{l=0}^{N-1} \omega^{jl}\omega^{lk} =\frac{1}{N}\sum_{l=0}^{N-1} \omega^{l(j+k)} = \frac{1}{N}\sum_{l=0}^{N-1} e^{2\pi i l(j+k)/N} 
+    \end{equation}
+    Let $m = j+k$, where $m \mod N \not\equiv 0$, then
+    \begin{equation}
+        (\mathcal{F}^2)_{jk} = \frac{1}{N}\sum_{l=0}^{N-1} e^{2\pi i l m /N} = \frac{1}{N} \frac{1 - e^{2\pi i m}}{1 - e^{2\pi i m /N}} = 0  
+    \end{equation}
+    Let $m = j+k$, where $m \mod N \equiv 0$, then writing $m=Nq$, where $q$ is an integer
+    \begin{equation}
+        (\mathcal{F}^2)_{jk} = \frac{1}{N}\sum_{l=0}^{N-1} e^{2\pi i l (Nq) /N} = \frac{1}{N} \sum_{l=0}^{N-1} e^{2\pi i l q}= \frac{1}{N} \sum_{l=0}^{N-1} 1
+    \end{equation}
+    Therefore, to find $\ket{\psi} = \mathcal{F}^2 \ket{3}$, we must find $ m \mod N  = j+k \mod N = 0$. We are given that $j = 3$, $N = 4$. Therefore, $(j+k) \mod N = 3 + k \mod N = 0$. Therefore $k = 1$. Therefore
+    \begin{equation}
+        \ket{\psi} = \mathcal{F}^2 \ket{3} = \ket{1}
+    \end{equation}
+    
+    
+    Useful fact: Standard root of unity: Let $\omega = e^{2 \pi i / N}$, then
+    \begin{equation}
+        \sum_{k=0}^{N-1}\omega^{km} = 
+        \begin{cases}
+            N, & m \mod N \equiv 0 \\
+            0, & m \not\equiv 0 
+        \end{cases}
+    \end{equation}
+    }%
+} 
+\newline \\\\
+What is the state $\ket{\psi} = \mathcal{F}^4\ket{3}$? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            \mathcal{F}^4 &= \sum_{l,m,n=0}^{N-1}\left(\frac{1}{\sqrt{N}} \omega^{jl}\right) \left(\frac{1}{\sqrt{N}} \omega^{lm}\right)\left(\frac{1}{\sqrt{N}} \omega^{mn}\right) \left(\frac{1}{\sqrt{N}} \omega^{nk}\right) \\
+            &=\frac{1}{N^2} \sum_{l,m,n=0}\omega^{l(j+m)}\omega^{n(m+k)} \\
+            &=\frac{1}{N^2} \sum_{m=0}^{N-1}\left(\sum_{l=0}^{N-1}\omega^{l(j+m)}\right)\left(\sum_{n=0}^{N-1}\omega^{n(m+k)}\right)
+        \end{align}
+        Therefore, $j+m \equiv 0 \mod N$ and $m+k \equiv 0 \mod N$. In this case, $j = 3$ and $N = 4$ are given, therefore, $m=1$ and $k=3$.  \\
+
+        Alternatively, $\mathcal{F}^2 \ket{j} = \ket{-j \mod N}$, since from standard root of unity, $j + k \equiv 0 \mod N \Rightarrow k = -j \mod N$. \\
+        Therefore, $\mathcal{F}^4 \ket{j} = (\mathcal{F}^2)^2 = \ket{-(-j) \mod N} = \ket{j \mod N}$, Therefore, $\mathcal{F}^4 = I$.
+    }%
+} 
+\newline \\\\
+
+
+Based on what you have just worked out, what are the possible eigenvalues of the QFT operator? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        From above, we can see that the eigenvalue of $\mathcal{F}^2$ is 1 and $\mathcal{F}^4$ is 1. Therefore all values $x$ that satisfy $\sqrt{x} = 1$ and $\sqrt[4]{x} = 1$. Therefore, the values are $1, -1, i, -i$. 
+    }%
+} 
+
+
+
+\subsubsection{Multiplicity of Eigenvalues}
+The trace of the QFT matrix, $\Tr(\mathcal{F})$, is known as a \textbf{Gauss Sum}. For a given $N$, the trace is given by:
+\begin{equation}
+    S(N) = \Tr(\mathcal{F}) = \frac{1}{\sqrt{N}} \sum_{j=0}^{N-1}e^{2 \pi i j^2 / N }
+\end{equation} 
+For the specific case of $N=4$, calculate the numerical value of the Gauss sum $S(N)$:\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+             S(4) &= \Tr(\mathcal{F}) = \frac{1}{\sqrt{N}} \sum_{j=0}^{N-1}e^{2 \pi i j^2 / N } \\
+             &= \frac{1}{2} \left(e^{2\pi i 0^2 / 4} + e^{2\pi i 1^2 / 4} + e^{2\pi i 2^2 / 4} + e^{2\pi i 3^2 / 4}\right) \\
+             &= \frac{1}{2} \left(1 + i + 1 + i\right)\\
+             S(4)&=1+i
+        \end{align}
+    }%
+} 
+
+\subsubsection{Constructing Eigenstates}
+Quantum states that are invariant under the QFT are known as "Fourier-invariant" states. \\
+
+Let $\ket{\psi}$ be an arbitrary state. Show that the state:
+\begin{equation}
+    \ket{\phi} = \ket{\psi} + \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi} 
+\end{equation}
+
+is an eigenstate of the QFT. What is the corresponding eigenvalue? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        We want to show that $\mathcal{F}\ket{\phi}$ is an eigenstate of $\mathcal{F}$, i.e., $F\ket{\phi} = \lambda \ket{\phi}$ for some eigenvalue $\lambda$.
+        \begin{align}
+            \mathcal{F}\ket{\phi} & = \mathcal{F}(\ket{\psi} + \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi} ) \\ 
+            &= \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi} + \mathcal{F}^4\ket{\psi} \\
+            &= \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi} + \ket{\psi} \\
+            &=\ket{\psi} + \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi}  \\
+            \mathcal{F}\ket{\phi}&=\ket{\phi}
+        \end{align}
+        The corresponding eigenvalue is 1.
+    }%
+} 
+\newline \\\\
+
+If we choose $\ket{\psi} = \ket{00}$ in a 2-qubit system ($N=4$), analytically compute the resulting normalized eigenstate $\ket{\phi}$. \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        In this case, $\ket{\psi} = \ket{00} = \ket{0}$. Then,
+        \begin{align}
+            \ket{\phi} & = \ket{\psi} + \mathcal{F}\ket{\psi} + \mathcal{F}^2\ket{\psi} + \mathcal{F}^3\ket{\psi} \\
+            &= \ket{0} + \mathcal{F}\ket{0} + \mathcal{F}^2\ket{0} + \mathcal{F}(\mathcal{F}^2\ket{0}) \\
+            &= \ket{0} + \mathcal{F}\ket{0} + \mathcal{F}^2\ket{0} + \mathcal{F}\ket{0} \\
+            &= \ket{0} + \frac{1}{2}(\ket{0} + \ket{1} + \ket{2} + \ket{3}) + \ket{0} + \frac{1}{2}(\ket{0} + \ket{1} + \ket{2} + \ket{3}) \\
+            &= 3\ket{0} + (\ket{1} + \ket{2} + \ket{3})
+        \end{align}
+        The normalization is given by $\norm{\braket{\phi|\phi}} = 3^2 + 1^2 + 1^2 + 1^2 = 12$.\\
+        Therefore,
+        \begin{equation}
+            \ket{\phi}  = \frac{1}{\sqrt{12}} (3\ket{00} + \ket{01} + \ket{10} + \ket{11})
+        \end{equation}
+    }%
+} 
+
+
+
+\newpage
+\subsection{Quantum Arithmetic in the Fourier Domain}
+The \textbf{Draper Adder} is an algorithm that performs addition in the ``phase" or Fourier domain. Unlike classical ripple-carry adders, it does not require auxiliary (ancilla) qubits for carry bits, making it highly space-efficient for quantum hardware. \\ 
+
+\textbf{Background and Notation}\\
+Consider two $n$-bit integers, $a$ and $b$. We represent these in two quantum registers $\ket{a}$ and $\ket{b}$, where:
+\begin{itemize}
+    \item $\ket{a} = \ket{a_{n-1}a_{n-2}\ldots a_0}$
+    \item $\ket{b} = \ket{b_{n-1}b_{n-2}\ldots b_0}$
+\end{itemize}
+We first apply the Quantum Fourier Transform (QFT) to the second register to obtain the state $\ket{\phi(b)} = \mathrm{QFT}\ket{b}$. The $l$-th qubit of the register $\ket{\phi(b)}$ (where $l \in \{1,\ldots, n\}$ is in the state:
+\begin{equation}
+    \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b/2^l)}\ket{1})
+\end{equation}
+ 
+Note that $b/2^l$ can be written in binary fraction notation as $0.b_{l-1}b_{l-2}\ldots b_0$.\\
+
+\textbf{The Task}\\
+To perform addition, we want to evolve the state of the $l$-th qubit of the second register such that its phase reflects the sum $(a+b)$. Specifically, we want the final phase of the $l$-th qubit to be:
+\begin{equation}
+    \exp\left(2\pi i \frac{a+b}{2^l}\right)
+\end{equation}
+ 
+After applying this phase shift, we apply an inverse QFT to obtain:
+\begin{equation}
+    \mathrm{QFT}^{-1}\ket{\phi(a+b)} = \ket{(a+b) \mod 2^n}
+\end{equation}
+
+The final state of the second register is the binary representation of the sum $a+b$, while the first register $\ket{a}$ remains unchanged. Because this method uses the phase of the qubits to ``store" the carry information implicitly, it requires \textbf{zero ancilla qubits}, making it notably more space-efficient than classical-style ripple-carry adders on quantum hardware. \\
+
+\textbf{Analytical Derivation}: Show that by applying a sequence of controlled-phase rotations $R_k$ (where $R_k$ applies a phase $e^{2\pi i / 2^k}$) to the $l$-th qubit of register $b$, controlled by the $j$-th bit of register $a$, we can achieve the desired phase. Determine the $k$ in terms of $l$ and $j$ to give the desired result: \\
+    \noindent\fbox{%
+      \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+            $R_k$ is given by 
+            \begin{equation}
+                R_k = \begin{pmatrix}
+                    1 & 0 \\ 0 & e^{2\pi i/2^k}
+                \end{pmatrix}
+            \end{equation}
+            The $l$-th qubit of the register $\ket{\phi(b)}$ (where $l \in \{1,\ldots, n\}$ is in the state:
+            \begin{equation}
+                \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b/2^l)}\ket{1})
+            \end{equation}
+            If we apply $R_k$ controlled by the $j$-th bit of register $a$, then if $R_k\ket{0} = \ket{0}, R_k\ket{1}= e^{2\pi i/2^k} \ket{1}$, succinctly the phase is given by $e^{2\pi i a_j/2^k}$
+            \begin{equation}
+                \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b/2^l)} e^{2\pi i a_j/2^k}\ket{1})
+            \end{equation}
+            If we let $k = l-j$, then 
+            \begin{align}
+                \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b/2^l)} e^{2\pi ia_j/2^{l-j}}\ket{1}) = \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b+ a_j2^j)/2^l} \ket{1})
+            \end{align}
+            Multiplying over all $j < l$
+            \begin{equation}
+                \frac{1}{\sqrt{2}} (\ket{0} + e^{2 \pi i (b+ a)/2^l} \ket{1})
+            \end{equation}\\
+
+            Review:\\
+            Split bits into $j < l$ and $j \leq l$. So
+            \begin{equation}
+                \frac{a}{2^l} = \sum_{j=0}^{l-1}a_j2^{j-l} + \sum_{j=l}^{n+1}a_j^{j-1}
+            \end{equation}
+            For $j < l$,
+            \begin{equation}
+                2^{j-l} = \frac{1}{2^{l-j}}
+            \end{equation}
+            These terms are the fractional part.
+            For $j < l$,
+            \begin{equation}
+                2^{j-l}
+            \end{equation}
+            This is an integer. We only care about the $j < l$ parts since $e^{2 \pi i \cdot \text{integer}}= 1$. 
+        }%
+    } 
+    \newline \\\\
+\textbf{Cirq Implementation}: Write a Python function using cirq that implements a 2-qubit Draper Adder, by completing the code below: \\
+    \begin{lstlisting}
+        import cirq
+
+        def draper_adder_2qubit(a_val, b_val):
+            # Qubits 0,1: Register A | Qubits 2,3: Register B
+            qubits = cirq.LineQubit.range(4)    
+            # a_val, b_val should be in range [0, 3]
+            a, b = qubits[:2], qubits[2:]       
+            circuit = cirq.Circuit()
+        
+            # 1. QFT on register b (Simplified for 2 qubits)
+            circuit.append([
+                cirq.H(b[0]), 
+                cirq.CZ(b[1], b[0])**0.5, 
+                cirq.H(b[1])
+            ])
+        
+            # 2. Phase Addition: Apply rotations to b based on a
+            for i in range(2):
+              for j in range(2):
+                      exponent = 1 / (2 ** (j - i))
+                      circuit.append(cirq.CZPowGate(exponent=exponent)(b[i], a[j]))
+        
+        
+            # 3. Inverse QFT on register b
+            circuit.append([
+                cirq.H(b[1]), 
+                cirq.CZ(b[1], b[0])**-0.5, 
+                cirq.H(b[0])
+            ])
+
+            # 4. Measure the result register
+            circuit.append(cirq.measure(*b, key='sum'))  
+            # 5. Simulate starting from state |a_val><b_val|
+            initial_state = (a_val << 2) | b_val         
+            result = cirq.Simulator().simulate(circuit, initial_state=initial_state)
+            
+            # Extract the measurement from the result object
+            # Returns the integer value of the bits measured in register 'b'
+            return result.measurements['sum'][0] * 2 + result.measurements['sum'][1]
+
+    \end{lstlisting}
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\subsection{Shor's Algorithm as Unitary Phase Estimation}
+In this problem, we re-examine Shor’s factoring algorithm by treating the modular multiplication step as a phase estimation task. Let $N$ be the integer we wish to factor, and let $a$ be a coprime integer ($\gcd(a,N) = 1$). \\
+
+We define the unitary operator $U_a$ acting on an $L$-qubit register ($L \approx \log_2 N$) as: 
+\begin{equation}
+    U_a\ket{x} = \ket{ax \mod N}
+\end{equation}
+
+\subsubsection{Eigenstates of the Modular Multiplication Operator}
+The operator $U_a$ permutes the elements of the group $\mathbb{Z}_N^*$. Let $r$ be the order of $a$ modulo $N$ (i.e., $a^r \equiv 1 \mod N$).
+
+\begin{enumerate}
+    \item For each $s \in \{0, 1, \ldots, r-1\}$, define the state:
+    \begin{equation}
+        \ket{u_s} = \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right)\ket{a^k \mod N}
+    \end{equation}
+    Show analytically that $\ket{u_s}$ is an eigenstate of $U_a$. 
+    \item Determine the corresponding eigenvalue $\lambda_s$. Express your answer in the form $\lambda_s = e^{2\pi i \phi}$, where $\phi_s$ is the phase we aim to estimate. 
+\end{enumerate}
+    \noindent\fbox{%
+      \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+            \begin{align}
+                U_a \ket{u_s} &= \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right)U_a\ket{a^k \mod N} \\
+                &=\frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right)\ket{aa^k \mod N} \\
+                &= \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right)\ket{a^{k+1} \mod N} 
+            \end{align}
+            Because $r$ is the order of $a \mod N$, the states $\ket{a^0 \mod N}, \ket{a^1 \mod N}, \ldots, \ket{a^{r-1} \mod N}$ are all distinct. Therefore the map $k \mapsto k+1 \mod r$ is just a cyclic relabeling of the same set. 
+            \begin{align}
+                U_a \ket{u_s} &= \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s (k-1)}{r}\right)\ket{a^k \mod N} \\
+                &= \frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right) \exp\left(\frac{2\pi i s}{r}\right)\ket{a^k \mod N}                 
+            \end{align}
+        } %
+    }
+
+\subsubsection{The Superposition of Eigenstates}
+In a real implementation of Shor's algorithm, we do not know the period $r$ beforehand, so we cannot easily prepare a specific eigenstate $\ket{u_s}$. Instead, we initialize the target register to $\ket{1}$.
+\begin{enumerate}
+    \item Prove that the state $\ket{1}$ can be written as a uniform superposition of all $r$ eigenstates:
+    \begin{equation}
+        \ket{1} = \frac{1}{\sqrt{r}} \sum_{s=0}^{r=1}\ket{u_s}
+    \end{equation}
+
+    \item With such an implementation, which of the following statements regarding the measurement of the phase $\phi \approx s/r$ and the extraction of the period $r$ are true? Select all that apply: \\
+\end{enumerate}
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1}\ket{u_s} &= \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1} \left(\frac{1}{\sqrt{r}}\sum_{k=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right)\ket{a^k \mod N}\right) \\
+            &= \frac{1}{r} \sum_{k=0}^{r-1}\left(\frac{-2\pi i s k}{r}\ket{a^k \mod N}\right)
+        \end{align}
+        If $k=0$, then every term is 1, so 
+        \begin{equation}
+            \sum_{s=0}^{r-1}e^{2\pi i s\cdot 0/r} = \sum_{s=0}^{r-1}1 = r
+        \end{equation}
+        If $k\neq 0$, then using the geometric series, 
+        \begin{align}
+            \sum_{s=0}^{r-1}\exp\left(\frac{-2\pi i s k}{r}\right) = \frac{1 - (e^{-2\pi i s k /r})^r}{1 - e^{-2\pi i s k /r}} = 0
+        \end{align}
+        Therefore, the only term that survives is $k=0$ which means the state is at $\ket{a^0 \mod N} = \ket{1}$. Summing up over $s=0$ to $r-1$, cancels out the $1/r$ therefore,
+        \begin{equation}
+            \ket{1} = \frac{1}{\sqrt{r}} \sum_{s=0}^{r-1}\ket{u_s}
+        \end{equation}
+    }%
+} \newline \\\\
+\noindent\fbox{%
+      \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+            \begin{itemize}
+                \item The algorithm fails to find $r$ if the measurement collapses the state into an eigenstate where $\gcd(s,r) > 1$. \textbf{FALSE}: \textit{ if $\gcd(s,r) d > 1$, then the fraction is not in lowest terms (for example, 2/6=1/3). If QPE gives $2/6$, continued fractions will recover the reduced fraction $1/3$, whose denominator is $3$ not $6$. But that does not mean the algorithm fails completely.}
+                \item If the measurement yields $s=0$, the resulting phase $\phi = 0$ provides no information about $r$ and the trial must be repeated. \textbf{TRUE}:\textit{ if $s=0$, then $\phi = 0/r = 0$. The run says nothing.}
+                \item Every value of $s \in \{0,1,\ldots,r-1\}$ is nearly equally likely to be measured with a probability of $1/r$. \textbf{TRUE}: \textit{the amplitude of each eigenstate $\ket{u_s}$ is $1/\sqrt{r}$. So the probability is $1/r$}
+                \item The continued fractions algorithm can be used as a post-processing step used to derive the simplified fraction $s/r$ from the QPE output. \textbf{TRUE}.
+                \item If $s$ and $r$ are coprime ($\gcd(s,r) = 1$), the denominator of the simplified fraction found via continued fractions is exactly $r$. \textbf{TRUE}.
+                \item The state $\ket{1}$ is used because it is an eigenstate of the unitary operator $U$, allowing for a deterministic measurement of $r$. \textbf{FALSE}: \textit{$\ket{1}$ is not an eigenstate of $U$.}
+                \item Even if $\gcd(s,r) = d > 1$, we can often recover $r$ by combining results from multiple trials. \textbf{TRUE}.
+            \end{itemize}
+        }%
+    } 
+    
+
+
+\subsubsection{Implementation via Controlled-U Gate}
+To perform Phase Estimation, we require the ability to implement controlled versions of $U_{a}^{2j}$
+ efficiently. \\
+
+Why is it critical to implement these as modular exponentiations rather than simply applying the base operator $U$, $\ket{x} \rightarrow \ket{ax \mod N}$, repeatedly? Select all that apply: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item Applying $U$ repeatedly $2^j$ times would require an exponential number of gates, making the algorithm no faster than classical factoring. \textbf{TRUE}
+            \item Modular exponentiation allows us to compute $U^{2^j}$ using only $j$ modular squarings, which keeps the total gate count polynomial in $\log N$. \textbf{TRUE}
+            \item Applying $U$ repeatedly is physically unrealistic because quantum gates suffer from decoherence, and a circuit with $2^n$ gates would likely lose its quantum state before finishing. \textbf{TRUE}
+            \item Modular exponentiation is only necessary because the phase estimation algorithm requires the input state to be $\ket{1}$ rather than an eigenstate. \textbf{FALSE}
+            \item The total number of modular multiplications required for the entire QPE circuit using modular exponentiation is $O(n)$, where $n \approx \log_2 N$. \textbf{TRUE}
+            \item Computing $a^{2^j} \mod N$ can be done efficiently by repeatedly squaring the previous result: $a^{2^j} = (a^{2^{}j-1})^2$. \textbf{TRUE}
+        \end{itemize}
+    }%
+} 
+
+\newpage
+\subsection{Reversible Computing of a Sequential Function}
+Consider the sequential function
+\begin{equation}
+    f = f_5 \circ f_4 \circ f_3 \circ f_2 \circ f_1  
+\end{equation}
+that is,
+\begin{equation}
+    f(x) = f_5(f_4(f_3(f_2(f_1(x)))))
+\end{equation}
+where each $f_1$  maps classical bit strings to bit strings. In quantum algorithms — for example, in quantum walk algorithms, quantum simulation, and Regev's recent quantum factoring algorithm — we often need to implement $f$  as a unitary (reversible) gate acting on a superposition input. \\
+
+In this problem set you will analyze \textbf{why} garbage-free reversible computation is essential for quantum coherence, \textbf{how} to quantify the space-time cost of doing so using pebbling games, and \textbf{how} quantum ghost pebbling reduces the required space. \\
+
+We begin with why reversible, garbage-free computation is desirable and often necessary for the goals of quantum algorithms.
+
+\subsubsection{Forward Computation and the Garbage Problem}
+The standard reversible gate for a function $f_1$ is the controlled mapping
+\begin{equation}
+    R_{f_1} \! : \! \ket{x}\ket{0} \longmapsto \ket{x}\ket{f_1(x)}
+\end{equation}
+Starting from five fresh ancilla registers, the \textbf{naive forward computation} of $f$ produces
+\begin{equation}
+    \ket{x_0}\ket{0}\ket{0}\ket{0}\ket{0}\ket{0} \xrightarrow[]{R_{f_1}, R_{f_2}, R_{f_3}, R_{f_4}, R_{f_5}}\ket{x_0}\ket{x_1}\ket{x_2}\ket{x_3}\ket{x_4}\ket{x_5}
+\end{equation}
+where $x_k = f_k(x_{k-1})$. The registers $\ket{x_1}$ through $\ket{x_4}$  are intermediate garbage - no longer needed once $\ket{x_5}$ is in hand, but they remain and entangle with the rest of the state. \\
+
+Which of the following correctly describe the state $\ket{x_0}\ket{x_1}\ket{x_2}\ket{x_3}\ket{x_4}\ket{x_5}$? Select all that apply. \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item The mapping $x_0 \mapsto (x_0, x_1, x_2, x_3, x_4, x_5)$ is injective on classical inputs, so the transformation is reversible. \textbf{TRUE}
+            \item If $\ket{x_0} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1})$, the intermediate registers become entangled with $x_0$ in the resulting state. \textbf{TRUE}
+            \item The intermediate registers $\ket{x_1},\ldots,\ket{x_4}$ can be safely traced out (partial-traced) without affecting the coherence between $\ket{x_0}$ and $\ket{x_5}$. \textbf{FALSE}
+            \item This forward mapping is a valid unitary to use inside interference-based quantum algorithms without any modification. \textbf{FALSE}
+        \end{itemize}
+    }%
+} 
+
+
+\subsubsection{The Cost of Ancilla Storage}
+How many ancilla registers (qubits) are required by the naive forward computation of $f = f_5 \circ f_4 \circ f_3 \circ f_2 \circ f_1 $? (Count only the ancilla registers, not the input register $\ket{x_0}$.) \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        The ancilla registers are $\ket{x_1}\ket{x_2}\ket{x_3}\ket{x_4}\ket{x_5}$. Therefore, there are 5 ancilla registers total. 
+    }%
+} 
+
+
+\subsubsection{Garbage Destroys Quantum Interference}
+Now suppose $\ket{x_0} = \ket{+} = \frac{1}{\sqrt{2}}(\ket{0} + \ket{1})$ and we apply the naive forward computation. We then attempt to exploit quantum interference by applying a Hadamard gate $H$ to register $x_0$. Which of the following correctly describe the outcome? Select all that apply: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item The garbage registers $\ket{x_1}, \ldots, \ket{x_4}$ are entangled with $\ket{x_0}$, preventing constructive or destructive interference in $x_0$. \textbf{TRUE}
+            \item The probability of measuring $x_0 = 0$ after applying $H$ to $x_0$ is exactly $\frac{1}{2}$ - no useful interference occurs. \textbf{TRUE}
+            \item Interference still occurs in $x_0$ because the functions $f_1$ are deterministic, making the state effectively classical. \textbf{FALSE}
+            \item The reduced density matrix of $x_0$, after tracing out all other registers, is $\frac{1}{2} I$ - a maximally mixed state. \textbf{TRUE}
+            \item If all five $f_i$ happen to be the identity function, garbage still prevents interference. \textbf{TRUE}
+        \end{itemize}
+    }%
+} 
+
+
+
+
+
+\subsubsection{Uncomputation Restores Coherence}
+To use $f$ inside a quantum algorithm we must uncompute the intermediate garbage after copying $\ket{x_5}$ to an output register. The uncomputation proceeds by applying the inverse gates in reverse order:
+\begin{equation}
+    R_{f_4}^{-1}, R_{f_3}^{-1}, R_{f_2}^{-1}, R_{f_1}^{-1}
+\end{equation}
+which restores registers $x_1, x_2, x_3, x_4$ to $\ket{0}$ while leaving $\ket{x_5}$ (output) intact. \\
+
+Which of the following correctly describes the complete forward-then-uncompute sequence? Choose the one correct answer: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item Apply $R_{f_1}, R_{f_2}, R_{f_3}, R_{f_4}, R_{f_5}$, then $R_{f_5}^{-1}R_{f_4}^{-1}, R_{f_3}^{-1}, R_{f_2}^{-1}, R_{f_1}^{-1}$
+            \item Apply $R_{f_1}, R_{f_2}, R_{f_3}, R_{f_4}, R_{f_5}$, then $R_{f_4}^{-1}, R_{f_3}^{-1}, R_{f_2}^{-1}, R_{f_1}^{-1}$, leaving $\ket{x_5}$ in the output register. \textbf{TRUE}
+            \item Measure registers $x_1,x_2,x_3,x_4$ in the computational basis and reset them to $\ket{0}$ classically. 
+            \item Apply $R_{f_1}^{-1}R_{f_2}^{-1}, R_{f_3}^{-1}, R_{f_4}^{-1}$ before $R_{f_5}^{-1}$ to avoid creating garbage. 
+        \end{itemize}
+    }%
+} \newline \\\\
+What is the \textbf{total number of reversible function applications} (i.e., applications of $R_{f_i}$ or $R_{f_i}^{-1}$ for any $i$) in the complete forward-then-uncompute procedure for $n=5$ steps?\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        For $n=5$, we applied $R_{f_1}, R_{f_2}, R_{f_3}, R_{f_4}, R_{f_5}$, then $R_{f_4}^{-1}, R_{f_3}^{-1}, R_{f_2}^{-1}, R_{f_1}^{-1}$. Therefore, the total function applications = 9.
+    }%
+} 
+\newline \\\\
+After the full forward-then-uncompute sequence, the state is
+\begin{equation}
+    \frac{1}{\sqrt{2}}(\ket{0} + \ket{1}) \otimes \ket{0} \otimes \ket{0} \otimes \ket{0} \otimes \ket{0} \otimes \ket{f(\cdot)} 
+\end{equation}
+ 
+Which of the following are true of this final state? Select all that apply: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item The state is a product between the input register $x_0$ and the output register $x_5$. \textbf{TRUE}
+            \item Applying $H$ to $x_0$ now yields constructive or destructive interference (measurement probabilities 0 or 1). \textbf{TRUE}
+            \item The output register $\ket{x_5}$ remains entangled with the garbage registers $\ket{x_1},\cdots,\ket{x_4}$. \textbf{FALSE}
+            \item The intermediate ancilla registers are returned to $\ket{0}$ and can be reused in subsequent computations. \textbf{TRUE}
+        \end{itemize}
+    }%
+}
+
+\newpage
+\subsection{The Reversible Pebbling Game}
+\subsubsection{Setup}
+The \textbf{space-time} cost of reversibly computing $f$ is captured by the \textbf{reversible pebble game} on a directed line graph with nodes $\{0,1,2,3,4,5\}$:
+\begin{itemize}
+    \item Node $0$ represents the \textbf{input} $x_0$ and \textbf{always} has a pebble.
+    \item Node $i$ ($i \geq 1$) represents register $x_i = f_i(x_{i-1)}$.
+    \item A \textbf{pebble} on node $i$ means that register is occupied (holding its value).
+\end{itemize}
+
+Two moves are allowed:
+\begin{itemize}
+    \item \textbf{Pebble}$(i)$: requires node $i-1$  to have a pebble. Places a pebble on node $i$ (computing $x_i$ from $x_{i-1}$ via $R_{f_i}$).
+    \item \textbf{Unpebble}$(i)$: requires both nodes $i-1$ and $i$ to have pebbles. Removes the pebble from node $i$ (uncomputing $x_i$ using $x_{i-1}$ via $R_{f_i}^{-1}$).
+\end{itemize}
+\textbf{Goal}: Place a pebble on node $5$ at some point (after which we copy $x_5$ to a separate output register), then return to the initial state with \textbf{only node} $0$ \textbf{pebbled}.\\
+
+The \textbf{pebbling cost} is the total number of Pebble $+$ Unpebble operations. The \textbf{pebbling space} is the maximum number of pebbles simultaneously present on nodes $1$ through $5$.
+
+
+\subsubsection{The Naive (Straight-Line) Strategy}
+The naive strategy computes all intermediates forward, copies the output, then uncomputes backward:
+\begin{equation}
+    \mathrm{Forward: P(1), P(2), P(3), P(4), P(5);} \qquad \mathrm{Backward: UP(4), UP(3), UP(2), UP(1)}
+\end{equation}
+What is the \textbf{pebbling space} (maximum simultaneous pebbles on nodes $1$–$5$) for the naive strategy? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        pebbling space = 5
+    }%
+} 
+\newline \\
+What is the \textbf{pebbling cost} (total Pebble $+$ Unpebble operations) for the naive strategy? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        pebbling cost = 9
+    }%
+} 
+
+\subsubsection{Bennett's Checkpoint Strategy}
+The naive strategy uses space $S=n$ but only time $T=2n-1$. To reduce space, we can use \textbf{checkpoints}. For $n=5$ with a single checkpoint at node $3$, the strategy is: \\
+
+\textbf{Phase 1} (forward to checkpoint $3$, then clean up):
+\begin{equation}
+    \mathrm{P(1), P(2), P(3), UP(2), UP(1)}
+\end{equation}
+Result: only node $3$ is pebbled (the checkpoint). \\
+
+\textbf{Phase 2} (forward from checkpoint to $5$):
+\begin{equation}
+    \mathrm{P(4), P(5)}
+\end{equation}
+[Copy $x_5$ to output register.]\\ 
+
+\textbf{Phase 3} (backward from $5$ to checkpoint $3$): \\
+\begin{equation}
+    \mathrm{UP(5), UP(4)}
+\end{equation}
+
+\textbf{Phase 4} (re-forward to checkpoint $3$ and uncompute):
+\begin{equation}
+    \mathrm{P(1), P(2), P(3), UP(3), UP(2), UP(1)}
+\end{equation}
+What is the \textbf{total pebbling cost} of Bennett's checkpoint strategy for $n=5$?\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        pebbling cost = 14
+    }%
+} 
+\newline \\\\
+What is the \textbf{pebbling space} (maximum simultaneous pebbles on nodes $1$–$5$) for Bennett's checkpoint strategy?\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        pebbling space = 3
+    }%
+} 
+\newline \\
+Which of the following correctly describe space-time tradeoffs in reversible pebbling? Select all that apply:
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item Bennett's single-checkpoint strategy for $n=5$ achieves space $3 < n$ but at a higher time cost ($14>9$ operations) than the naive strategy. \textbf{TRUE}
+            \item Using $k$ checkpoints (Bennett's recursive strategy), the time for general $n$ grows as $T = O(n^{1+1/(k-1))}$ for fixed $k$, while space remains $O(k)$. \textbf{TRUE}
+            \item There exists a standard (ghost-free) reversible pebbling strategy that achieves both $O(1)$ space and $O(n)$ time simultaneously.\textbf{FALSE}
+            \item With space $S = O(\log n)$, Bennett's recursion gives time $T = O(n\cdot \poly \log n)$, far better than $O(n^2)$. \textbf{TRUE}
+            \item For general $n$, the naive strategy's time $2n-1$ is optimal (minimum pebbling cost) over all strategies with space $S=n$. \textbf{TRUE}
+        \end{itemize}
+    }%
+}
+\newpage
+\subsection{Quantum Ghost Pebbling: Measurement-Based Uncomputation}
+Standard reversible pebbling computes $f = f_n\circ \cdots \circ f_1$ using $O(n)$ ancilla qubits. A striking alternative is \textbf{measurement-based uncomputation}, introduced by Gidney and developed into spooky pebbling by Kahanamoku-Meyer, Van Kirk, and Ragavan. The core idea is to replace the quantum operation of uncomputing an intermediate register with an $X$-basis measurement that frees the qubit immediately but leaves behind a cheap-to-track classical phase — a \textbf{ghost}. Done carefully, the entire computation of $f(k)$ can be performed coherently and without any long-lived garbage, using only \textbf{3 quantum registers} regardless of $n$, at a cost of $O(n^2)$ total operations.
+
+\subsubsection{The Ghost Measurement}
+Suppose we have computed the two-register state
+\begin{equation}
+    \ket{\Phi} = \sum_k \alpha_k \ket{f_0(k)} \ket{f_1(k)}
+\end{equation}
+ 
+where $f_0(k) = k$ is the input and $f_1 = f_1(k)$  is the first intermediate value. We wish to free the $\ket{f_0}$ register without keeping it around as ordinary ancilla garbage. \\
+
+The $X$\textbf{-basis measurement} proceeds as follows:
+\begin{enumerate}
+    \item Apply Hadamard gates to every qubit of the $\ket{f_0}$ register.
+    \item Measure in the computational ($Z$) basis, obtaining a random classical bit string $q_0$.
+\end{enumerate}
+Using the identity $H\ket{k} = \frac{1}{\sqrt{\abs{K}}} \sum_q (-1)^{k \cdot q} \ket{q}$, the state just before measurement is
+\begin{equation}
+    \sum_k \alpha_k \left(\frac{1}{\sqrt{\abs{K}}} \sum_{q_0} (-1)^{f_0 \cdot q_0} \ket{q_0} \right) \ket{f_1}
+\end{equation}
+Measuring $\ket{q_0}$ yields a specific classical outcome $q_0$ (with equal probability over all $q_0$), collapsing to the post-measurement state
+\begin{equation}
+    \sum_k \alpha_k (-1)^{f_0(k) \cdot q_0} \ket{f_1(k)}
+\end{equation}
+The $\ket{f_0}$ qubit is now \textbf{free}. Its influence lives on only as the classical phase factor $(-1)^{f_0 \cdot q_0}$, parametrized by the known classical string $q_0$: this is the \textbf{ghost pebble} of $f_0$. \\
+
+Which of the following correctly describe the $X$-basis measurement of the $\ket{f_1}$ register? Select all that apply:
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item The measurement outcome $q_0$ is a uniformly random classical bit string - it carries no quantum coherence. \textbf{TRUE}
+            \item The measurement irreversibly destroys all information about $f_0(k)$: the phase $(-1)^{f_0\cdot q_0}$ cannot be used to recover it. \textbf{FALSE}
+            \item The qubit register that held $\ket{f_0}$ is freed and can be reused for subsequent computation. \textbf{TRUE}
+            \item The reduced density matrix of the $\ket{f_1}$ register becomes mixed after the measurement, destroying coherence over $k$. \textbf{FALSE}
+        \end{itemize}
+    }%
+} 
+\newline \\\\
+The ghost phase $(-1)^{f_j\cdot q_j}$ is the key classical quantity carrying phase information after the $X$-basis measurement. For a single-bit register where $f_j,q_j \in \{0,1\}$, the $\mathbb{F}_2$ inner product reduces to ordinary multiplication: $f_j \cdot q_j = f_jq_j$. When the measurement outcome is $q_j = 1$, the ghost phase simplifies to a function of $f_j$ alone.
+
+
+
+\subsubsection{The Forward Sweep: $n=2$ Steps}
+Consider $f = f_2 \circ f_1$, i.e., $f(k) = f_2(f_1(k))$, and write $f_0 = k$, $f_1 = f_1(k)$, $f_2 = f(k)$. Starting from $\ket{\Phi_0} = \sum_k \alpha_k \ket{f_0}$, the forward sweep alternates \textbf{extend} (compute the next intermediate using $R_{f_i}$) and $X$\textbf{-measure} (free the previous register) steps:
+\begin{align}
+    &\sum_{k}\alpha_k \underbrace{\ket{f_0}}_{1 \text{ pebble}} \xrightarrow[]{\text{extend } f_1} \sum_k \alpha_k \underbrace{\ket{f_0}\ket{f_1}}_{2 \text{ pebbles}} \xrightarrow[]{X-\text{meas }f_0,q_0} \sum_k \alpha_k \underbrace{(-1)^{f_0\cdot q_0}}_{\text{ghost}}\underbrace{\ket{f_1}}_{1 \text{ pebble} } \\
+    & \notag\\
+    & \xrightarrow[]{\text{extend } f_2} \sum_k \alpha_k(-1)^{f_0\cdot q_0} \underbrace{\ket{f_1}\ket{f_2}}_{2 \text{ pebbles}} \xrightarrow[]{X-\text{meas }f_1,q_1} \sum_k \alpha_k \underbrace{(-1)^{f_0 \cdot q_0}(-1)^{f_1 \cdot q_1}}_{2 \text{ ghosts}} \underbrace{\ket{f_2}}_{1 \text{ pebble} }
+\end{align}
+Defining the \textbf{ghost phase product} $\phi_i(\vec{q}) = \prod_{j=i}^{n-1} (-1)^{f_j \cdot q_j}$, the final state of the forward sweep is compactly
+\begin{equation}
+    \sum_k \alpha_k \phi_0(\vec{q})\ket{f_2}, \qquad \phi_0(\vec{q}) = (-1)^{f_0\cdot q_0} (-1)^{f_1\cdot q_1}
+\end{equation}
+ 
+The \textbf{output register} $\ket{f_2}$ is a full quantum register (a pebble). The two ghost phases $(-1)^{f_0 \cdot q_0}$ and $(-1)^{f_1 \cdot q_1}$ are pure classical data, stored as the known bit strings $q_0$ and $q_1$. \\
+
+What is the intermediate state just \textbf{before} the $X$-measurement of $f_1$ (i.e., after extending to $f_2$ but before measuring)? Choose the one correct answer: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item $\sum_k \alpha_k (-1)^{f_0 \cdot q_0} \ket{f_1} \ket{f_2}$. \textbf{TRUE}
+            \item $\sum_k \alpha_k \ket{f_1}\ket{f_2}$ - the ghost phase $(-1)^{f_0\cdot q_0}$ has already been erased by this point
+            \item $\sum_k \alpha_k (-1)^{f_0 \cdot q_0} (-1)^{f_1 \cdot q_1} \ket{f_2}$ - both ghost phases have already been applied
+            \item $\sum_k \alpha_k \ket{f_0} \ket{f_1} \ket{f_2}$ - all three registers are still present
+        \end{itemize}
+    }%
+} 
+\newline \\\\
+Which of the following correctly describe the state $\sum_k \alpha_k \phi_0(\vec{q})\ket{f_2}$ at the end of the $n=2$ forward sweep? Select all that apply: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item Only 1 quantum register (qubit) is occupied - the output $\ket{f_2}$ \textbf{TRUE}
+            \item The ghost phase product $\phi_0(\vec{q}) = (-1)^{f_0\cdot q_0}(-1)^{f_1\cdot q_1}$ depends on the specific input $k$ (since $f_0 = k$ and $f_1 = f_1(k)$ bot depend on $k$). \textbf{TRUE}
+            \item The classical bit strings $q_0$ and $q_1$ are no longer needed and can be discarded at this point. \textbf{FALSE}
+            \item To obtain the clean output $\sum_k \alpha_k \ket{f(k)}$, the ghost phases $\phi_0(\vec{q})$ must still be erased. \textbf{TRUE}
+        \end{itemize}
+    }%
+}
+
+\subsubsection{The Forward Sweep: General $n$ Steps}
+For the general $n$-step function $f = f_n \circ \cdots f_1$, the forward sweep iterates the extend+$X$-measure pattern $n$ times:
+\begin{equation}
+    \sum_k \alpha_k \ket{f_0} \xrightarrow[]{\text{extend, }X\text{-meas, extend, }X\text{-meas,}\cdots}\sum_k \alpha_k \underbrace{\left[ \prod_{j=0}^{n-1}(-1)^{f_j \cdot q_j} \right]}_{\phi_0(\vec{q})\text{, all classical}} \ket{f_n}
+\end{equation}
+At every step the pattern is: extend (peak at 2 pebbles), then $X$-measure the older register (back to 1 pebble). The result is the output state $\ket{f_n}$ adorned with $n$ classical ghost phases. \\
+
+What is the maximum number of pebbles (live quantum registers) in use at any point during the $n=5$ forward sweep? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        max pebbles = 2
+    }%
+}
+\newline \\\\
+After the $n$-step forward sweep, the output state carries the accumulated ghost phase product
+\begin{equation}
+    \phi_0(\vec{q}) = (-1)^{f_0q_0} \cdot (-1)^{f_1q_1} \cdots (-1)^{f_{n-1}q_{n-1}}
+\end{equation}
+Because $(-1)^a \cdot (-1)^b = (-1)^{a+b}$, this product can be written as a single exponential $\phi_q(\vec{q}) = (-1)^E$. \\
+
+For the $n=2$ case, write the exponent $E$ as an algebraic expression in $f_0, q_0, f_1, q_1$.\\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{equation}
+            E = f_0q_0 + f_1q_1
+        \end{equation}
+    }%
+}
+
+\subsubsection{The Backward Sweep and Phase Erasure}
+After the forward sweep we have $\sum_k \alpha_k \phi_0(\vec{q}) \ket{f_n}$ with $n$ ghost phases and 1 pebble. To recover the clean output $\sum_k \alpha_k \ket{f_n}$  we must erase all ghost phases. The \textbf{backward sweep} does this one ghost at a time:\\
+
+\textbf{One iteration of the backward sweep} (erasing the $f_0$ ghost, illustrated for general $n$):
+\begin{enumerate}
+    \item \textbf{Reverse to} $f_1$: Starting from $\ket{f_n}$, apply the inverse circuits in sequence, keeping $\ket{f_n}$ and adding new registers while $X$-measuring each one as it is produced. This traverses back through $f_{n-1},f_{n-2},\ldots,f_1$, converting each along the way into a new ghost phase. The peak state is $f_{n-1}\ket{f_{j-1}} \ket{f_j}$ - \textbf{3 pebbles} - which briefly appears as each new $\ket{f_{j-1}}$ is computed from $\ket{f_j}$ before $\ket{f_j}$ is measured.
+    \item \textbf{Phase erasure}: With $\ket{f_n}$ and $\ket{f_1}$ simultaneously present, re-compute $f_0 = f_1^{-1}(f_1)$ classically (using the inverse of $f_1$) and apply the phase correction $(-1)^{-f_0\cdot q_0}$  as a classically controlled phase gate. This cancels the $(-1)^{f_0q_0}$ ghost.
+    \item \textbf{Measure} $f_1$: $X$-measure $\ket{f_1}$ with outcome $q_1'$, producing a new ghost phase $(-1)^{f_1\cdot q_1 '}$ and freeing the $\ket{f_1}$ register. Update the classical record: $q_1 \leftarrow q_1 + q_1'$.
+\end{enumerate}
+After one iteration: the $f_0$ ghost is erased, the remaining $n-1$ ghost phases are updated, and we are back to 1 pebble. Repeating $n$ times in total erases all ghosts and yields the clean output $\sum_k \alpha_k \ket{f_n}$.\\
+
+
+What is the \textbf{maximum number of pebbles} simultaneously in use during the backward sweep? Choose the one correct answer: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item 1 - only $\ket{f_n}$ is ever present during the backward sweep.
+            \item 2 - the backward sweep reuses the same 2-pebble pattern as the forward sweep.
+            \item 3 - during each ``reverse" step, $\ket{f_n}$, $\ket{f_j-1}$, and $\ket{f_j}$ are all live simultaneously. \textbf{TRUE}
+            \item $n$ - all intermediate values must be reconstructed at once before erasing the ghost. 
+        \end{itemize}
+    }%
+}
+\newline \\\\
+What is the maximum number of pebbles in use at any point during the entire ghost pebbling protocol (forward sweep + all backward sweep iterations) for $n=5$? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        max pebbles over entire protocol = 3
+    }%
+}
+
+
+\subsubsection{Resource Costs and Comparison}
+We can now compare the resource costs of the three main strategies for reversibly computing $f = f_n \circ \cdots \circ f_1$  and returning to a clean state. The total operations count all applications of $R_{f_i}$ or $R_{f_i}^{-1}$ (plus $X$-measurements, which are inexpensive).
+\begin{table}[!h]
+\begin{tabular}{lcc}
+\textbf{Strategy}                      & \multicolumn{1}{l}{\textbf{Max qubits (space)}} & \multicolumn{1}{l}{\textbf{Total operations (time)}} \\
+Naive (store all intermediates)        & $n$                                             & $2n-1$                                               \\
+Bennett recursive (divide-and-conquer) & $O(\log n)$                                     & $O(n^{1.58})$                                         \\
+Ghost pebbling (this section)          & \textbf{3}                                      & $O(n^2)$                                            
+\end{tabular}
+\end{table}
+
+Ghost pebbling achieves the best space (only 3 qubits, constant in $n$), at the cost of $O(n^2)$ total operations - worse than Bennett's $O(n^{1.58})$ but still polynomial. The key practical advantage is that classical bit manipulation (storing and updating $\vec{q}$) is vastly cheaper than storing $O(\log n)$ live quantum registers. \\
+
+Which of the following correctly summarize the trade-offs among the three strategies for $n=5$? Select all that apply: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{itemize}
+            \item Ghost pebbling uses fewer qubits than both the naive strategy and Bennett's strategy for $n=5$. \textbf{FALSE}
+            \item The ghost pebbling forward sweep (only) requires fewer operations than the naive strategy ($5$ vs. $9$ extend ops). \textbf{TRUE}
+            \item Ghost pebbling's $O(n^2)$ total operation count makes it slower than the naive strategy's $2n-1$ for small $n$, but its space advantage ($3$ qubits vs. $5$) can still be decisive for large $n$. \textbf{TRUE}
+            \item Ghost pebbling and Bennett's strategy both use $3$ qubits for $n=5$; the difference is that ghost pebbling replaces live qubit storage with cheap classical bit storage for large $n$. \textbf{TRUE}
+            \item The ghost phase $(-1)^{f_j \cdot q_j}$ requires storing the full quantum state of $f_j$ as classical data. \textbf{FALSE}
+        \end{itemize}
+    }%
+}
+
+
+
+
+\newpage
+\subsection{Factoring via Lattice Reduction with Partial Bit Knowledge}
+In this problem we factor $N=91$ using the quantum period-finding approach from lecture, aided by partial knowledge of the prime factors. The key computational step is the \textbf{extended Euclidean algorithm (EEA)}, which is precisely a two-dimensional lattice reduction: it finds the shortest lattice vector in the span of $(M,0)$ and $(Y,1)$ (where $M$ is the Hilbert-space dimension and $Y$ is the measurement outcome), recovering the hidden period $T$. \\
+
+\textbf{Setup.} We wish to factor $N=91 = p \cdot q$  where $p$ and $q$ are distinct primes. Partial knowledge of the binary representations of $p$ and $q$ is available:
+\begin{itemize}
+    \item The 4-bit binary representation of $p$ begins with $01$, so $4 \leq p \leq 7$.
+    \item The 4-bit binary representation of $q$ begins with $110$, so $12 \leq q \leq 13$.
+\end{itemize}
+We run the period-finding subroutine on $f(x) = d^x \mod N$ with base $c=2$ and $d \equiv c^2 \equiv 4 \mod 91$.
+
+\subsubsection{Bounding the period}
+The period $T$ of $f$ divides $\lambda(N) = \text{lcm}(p-1, q-1)$. The partial bit knowledge gives upper bounds $p \leq p_{\text{max}} = 7$ and $q \leq q_{\text{max}} = 13$, so we can bound
+\begin{equation}
+    T_{\text{max}} = \text{lcm}(p_{\text{max}} - 1, q_{\text{max}} - 1)
+\end{equation}
+Compute $T_{\text{max}}$: \\ 
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            T_{\text{max}} &= \text{lcm}(p_{\text{max}} - 1, q_{\text{max}} - 1)\\ 
+            &= \text{lcm}(7 - 1, 13 - 1) \\
+            T_{\text{max}} &= \text{lcm}(6, 12)
+        \end{align}
+        $6 = 2 \times 3$ and $12 = 2^2 \times 3$. Therefore,
+        \begin{equation}
+            T_{\text{max}} = \text{lcm}(6, 12) = 2^2 \times 3 = 4 \times 3 = 12
+        \end{equation}
+    }%
+}
+
+
+\subsubsection{Choosing the register dimension}
+The inexact quantum period-finding circuit uses a Hilbert space of dimension $M = 4T_{\text{max}^2}$. This guarantees that the Fourier-peak width $\sigma' = M / (2 \pi \sigma)$ is less than $1$ when $\sigma = T_{\text{max}^2}$, so the measured integer $Y$ satisfies
+\begin{equation}
+    \left| Y - k' \frac{M}{T} \right| < 2 \Rightarrow \left| \frac{Y}{M} -  \frac{k'}{T} \right| < \frac{1}{2T_{\text{max}}^2}
+\end{equation}
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{equation}
+            M = 4T_{\text{max}}^2
+        \end{equation}
+    }%
+}
+\subsubsection{Recovering the period via the EEA}
+The quantum circuit with $M = 577$ (a prime slightly above $4T_{\text{max}}=576$) measures the outcome $Y = 481$. . By the Diophantine-approximation guarantee, the fraction $k'/T$ is a \textbf{convergent} of $Y/m$.\\
+
+We find convergents by running the EEA, tracking integer linear combinations $a_iM+b_iY=r_i$  (each row is a lattice vector of decreasing length; the fifth column shows the convergent $k'/T \approx -a_i/b_i$:
+
+\begin{center}
+\begin{table}[!h]
+\begin{tabular}{ccccc}
+\textbf{Step} & $r_i$ & $a_i$ & $b_i$ & $-a_i/b_i$ \\
+0 & 577 & 1 & 0 & -- \\
+1 & 481 & 0 & 1 & -- \\
+2 & 96 & 1 & -1 & 1/1 \\
+3 & \textbf{1} & -5 & \textbf{6} & 5/6  
+\end{tabular}
+\end{table}
+\end{center}
+
+We stop at step 3 because the denominator $6 \leq T_{\text{max}} = 12$, while the next step would give denominator. The stopping rule (from lecture) is: take the convergent with the largest denominator $481 \gg T_{\text{max}}$. \\
+
+The key linear combination at step 3 is
+\begin{equation}
+    (-5) \cdot 577 + 6 \dot 581 = -2885+2886 = 1
+\end{equation}
+
+confirming a residual of $1 \ll M$. What is the period $T$ recovered from the EEA? \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        The algorithm  says choose the convergent with the largest denominator $T_{\text{max}}=12$. From the table we have that \begin{equation}
+            \frac{k'}{T} = \frac{5}{6}
+        \end{equation}
+        Therefore, $T = 6$.
+    }%
+}
+
+
+\subsubsection{Extracting the factors}
+With period $T=6$ and $c=2$, form  \begin{equation}
+a \equiv c^T \pmod N = 2^6 \bmod 91 = 64.
+\end{equation}
+One can verify
+\begin{equation}
+a^2 = 64^2 = 4096 = 45\cdot 91 + 1 \equiv 1 \pmod{91}
+\end{equation}
+and
+\begin{equation}
+a = 64 \not\equiv \pm 1 \pmod{91}
+\end{equation}
+
+(since $64 \neq 1$ and $64 \neq 90$). \\
+
+Therefore $N \mid (a-1)(a+1)$ but $N \nmid a\pm 1$, so the prime factors of $N$ split across the two factors and a simple GCD yields a non-trivial divisor:
+\begin{equation}
+p = \gcd(a-1,N)=\gcd(63,91).
+\end{equation}
+Compute $\gcd(c^T-1,N)$ with $c=2$, $T=6$, $N=91$: \\
+\noindent\fbox{%
+  \parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+        \begin{align}
+            \gcd(c^T - 1,N) &= \gcd(2^6-1,91) \\
+            &= \gcd(63,91) 
+        \end{align}
+        $91 = 7 \times 13$ and $63 = 9 \times 7$. Therefore $\gcd(63,91) = 7$
+    }%
+}
